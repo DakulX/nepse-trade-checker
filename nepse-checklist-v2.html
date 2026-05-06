@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEPSE Trade Checker v2 — Daku's Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e0f;
+    --surface: #111618;
+    --surface2: #181e20;
+    --border: #1e2729;
+    --green: #00e676;
+    --green-dim: #1a3d2b;
+    --red: #ff3d57;
+    --red-dim: #3d1a1f;
+    --amber: #ffb300;
+    --amber-dim: #3d2d00;
+    --cyan: #00bcd4;
+    --purple: #b39ddb;
+    --text: #e8f0f2;
+    --muted: #5a7077;
+    --accent: #00bcd4;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; min-height:100vh; padding:0 0 60px; }
+
+  header { background:var(--surface); border-bottom:1px solid var(--border); padding:18px 24px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-icon { width:36px; height:36px; background:var(--accent); border-radius:8px; display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:14px; font-weight:700; color:var(--bg); }
+  .logo-text { font-size:16px; font-weight:800; letter-spacing:0.05em; }
+  .logo-sub { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; }
+  .version-badge { font-size:10px; font-weight:700; padding:3px 10px; border-radius:20px; background:rgba(0,188,212,0.12); color:var(--accent); border:1px solid rgba(0,188,212,0.25); letter-spacing:0.08em; }
+
+  .stock-bar { padding:16px 24px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .stock-bar input { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 14px; color:var(--text); font-family:'Space Mono',monospace; font-size:12px; outline:none; transition:border-color 0.2s; }
+  .stock-bar input:focus { border-color:var(--accent); }
+  .stock-bar input::placeholder { color:var(--muted); }
+  .inp-symbol { width:130px; text-transform:uppercase; }
+  .inp-num { width:150px; }
+  .reset-btn { background:transparent; border:1px solid var(--border); border-radius:8px; padding:9px 16px; color:var(--muted); font-family:'Space Mono',monospace; font-size:11px; cursor:pointer; transition:all 0.2s; margin-left:auto; }
+  .reset-btn:hover { border-color:var(--red); color:var(--red); }
+
+  .tabs { display:flex; padding:16px 24px 0; gap:4px; border-bottom:1px solid var(--border); }
+  .tab { padding:10px 20px; border-radius:8px 8px 0 0; font-size:12px; font-weight:700; cursor:pointer; border:1px solid transparent; border-bottom:none; transition:all 0.2s; letter-spacing:0.06em; color:var(--muted); }
+  .tab.buy.active { background:var(--green-dim); border-color:var(--border); border-bottom-color:var(--green-dim); color:var(--green); position:relative; bottom:-1px; }
+  .tab.sell.active { background:var(--red-dim); border-color:var(--border); border-bottom-color:var(--red-dim); color:var(--red); position:relative; bottom:-1px; }
+
+  .content { padding:20px 24px; max-width:720px; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+
+  .section { margin-bottom:20px; background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .section-header { padding:11px 16px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .section-title { font-size:11px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); }
+  .section-score { font-family:'Space Mono',monospace; font-size:11px; color:var(--muted); }
+  .section-badge { font-size:9px; font-weight:700; padding:2px 8px; border-radius:10px; letter-spacing:0.08em; }
+  .badge-leading { background:rgba(0,230,118,0.12); color:var(--green); border:1px solid rgba(0,230,118,0.25); }
+  .badge-lagging { background:rgba(90,112,119,0.15); color:var(--muted); border:1px solid var(--border); }
+
+  .check-item { display:flex; align-items:flex-start; gap:12px; padding:13px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:background 0.15s; user-select:none; }
+  .check-item:last-child { border-bottom:none; }
+  .check-item.buy-item:hover { background:rgba(0,230,118,0.04); }
+  .check-item.sell-item:hover { background:rgba(255,61,87,0.04); }
+
+  .checkbox { width:20px; height:20px; border-radius:5px; border:1.5px solid var(--border); flex-shrink:0; margin-top:1px; display:flex; align-items:center; justify-content:center; transition:all 0.15s; background:var(--bg); }
+  .check-item.buy-item.checked .checkbox { background:var(--green); border-color:transparent; }
+  .check-item.sell-item.checked .checkbox { background:var(--red); border-color:transparent; }
+  .checkbox svg { opacity:0; transform:scale(0.5); transition:all 0.15s; }
+  .check-item.checked .checkbox svg { opacity:1; transform:scale(1); }
+
+  .check-content { flex:1; }
+  .check-label { font-size:13px; font-weight:600; color:var(--text); line-height:1.4; transition:color 0.15s; }
+  .check-item.buy-item.checked .check-label { color:var(--green); }
+  .check-item.sell-item.checked .check-label { color:var(--red); }
+  .check-hint { font-size:11px; color:var(--muted); margin-top:3px; font-family:'Space Mono',monospace; line-height:1.55; }
+  .check-how { font-size:10px; color:var(--accent); margin-top:4px; font-family:'Space Mono',monospace; line-height:1.5; opacity:0.85; }
+
+  .check-tag { font-size:9px; font-weight:700; padding:3px 7px; border-radius:4px; letter-spacing:0.08em; flex-shrink:0; margin-top:2px; white-space:nowrap; }
+  .tag-critical { background:rgba(255,61,87,0.15); color:var(--red); border:1px solid rgba(255,61,87,0.3); }
+  .tag-important { background:rgba(255,179,0,0.12); color:var(--amber); border:1px solid rgba(255,179,0,0.25); }
+  .tag-confirm { background:rgba(0,188,212,0.1); color:var(--accent); border:1px solid rgba(0,188,212,0.2); }
+  .tag-leading { background:rgba(0,230,118,0.1); color:var(--green); border:1px solid rgba(0,230,118,0.2); }
+  .tag-price { background:rgba(179,157,219,0.12); color:var(--purple); border:1px solid rgba(179,157,219,0.25); }
+
+  .verdict-card { border-radius:12px; padding:18px; margin-bottom:20px; border:1px solid var(--border); transition:all 0.3s; position:relative; overflow:hidden; }
+  .verdict-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; }
+  .verdict-card.neutral::before { background:var(--muted); }
+  .verdict-card.strong-buy::before { background:var(--green); }
+  .verdict-card.weak-buy::before { background:var(--amber); }
+  .verdict-card.no-trade::before { background:var(--red); }
+  .verdict-card.strong-sell::before { background:var(--red); }
+  .verdict-card.weak-sell::before { background:var(--amber); }
+  .verdict-card.hold::before { background:var(--accent); }
+  .verdict-card.neutral { background:var(--surface); }
+  .verdict-card.strong-buy { background:rgba(0,230,118,0.06); border-color:rgba(0,230,118,0.25); }
+  .verdict-card.weak-buy { background:rgba(255,179,0,0.06); border-color:rgba(255,179,0,0.25); }
+  .verdict-card.no-trade { background:rgba(255,61,87,0.06); border-color:rgba(255,61,87,0.25); }
+  .verdict-card.strong-sell { background:rgba(255,61,87,0.08); border-color:rgba(255,61,87,0.3); }
+  .verdict-card.weak-sell { background:rgba(255,179,0,0.06); border-color:rgba(255,179,0,0.25); }
+  .verdict-card.hold { background:rgba(0,188,212,0.05); border-color:rgba(0,188,212,0.2); }
+
+  .verdict-top { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .verdict-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+  .verdict-card.neutral .verdict-icon { background:rgba(90,112,119,0.2); }
+  .verdict-card.strong-buy .verdict-icon { background:rgba(0,230,118,0.15); }
+  .verdict-card.weak-buy .verdict-icon { background:rgba(255,179,0,0.15); }
+  .verdict-card.no-trade .verdict-icon, .verdict-card.strong-sell .verdict-icon { background:rgba(255,61,87,0.15); }
+  .verdict-card.weak-sell .verdict-icon { background:rgba(255,179,0,0.15); }
+  .verdict-card.hold .verdict-icon { background:rgba(0,188,212,0.12); }
+  .verdict-label { font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--muted); margin-bottom:2px; }
+  .verdict-title { font-size:22px; font-weight:800; letter-spacing:-0.01em; }
+  .verdict-card.neutral .verdict-title { color:var(--muted); }
+  .verdict-card.strong-buy .verdict-title { color:var(--green); }
+  .verdict-card.weak-buy .verdict-title { color:var(--amber); }
+  .verdict-card.no-trade .verdict-title, .verdict-card.strong-sell .verdict-title { color:var(--red); }
+  .verdict-card.weak-sell .verdict-title { color:var(--amber); }
+  .verdict-card.hold .verdict-title { color:var(--accent); }
+  .verdict-desc { font-size:12px; color:var(--muted); line-height:1.6; margin-top:8px; }
+
+  .score-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:12px; }
+  .score-mini { background:var(--bg); border-radius:8px; padding:8px 10px; border:1px solid var(--border); }
+  .score-mini-label { font-size:9px; font-family:'Space Mono',monospace; color:var(--muted); margin-bottom:3px; letter-spacing:0.06em; }
+  .score-mini-val { font-size:15px; font-weight:800; font-family:'Space Mono',monospace; }
+
+  .progress-wrap { margin:10px 0 4px; background:var(--bg); border-radius:4px; height:5px; overflow:hidden; }
+  .progress-bar { height:100%; border-radius:4px; transition:width 0.4s ease, background 0.4s; width:0%; }
+  .score-text { font-family:'Space Mono',monospace; font-size:10px; color:var(--muted); display:flex; justify-content:space-between; }
+
+  .blocker-alert { background:rgba(255,61,87,0.08); border:1px solid rgba(255,61,87,0.25); border-radius:8px; padding:11px 14px; margin-bottom:12px; font-size:11px; color:var(--red); font-family:'Space Mono',monospace; line-height:1.6; display:none; }
+  .blocker-alert.visible { display:block; }
+
+  /* INDICATOR LEGEND */
+  .legend-row { display:flex; gap:12px; padding:10px 16px; background:var(--surface2); border-bottom:1px solid var(--border); flex-wrap:wrap; }
+  .legend-item { display:flex; align-items:center; gap:5px; font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; }
+  .legend-dot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+
+  /* P/L */
+  .pl-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; padding:14px; }
+  .pl-input-wrap { }
+  .pl-label { font-size:10px; color:var(--muted); font-family:'Space Mono',monospace; margin-bottom:5px; letter-spacing:0.06em; text-transform:uppercase; }
+  .pl-input { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:9px 12px; color:var(--text); font-family:'Space Mono',monospace; font-size:12px; outline:none; transition:border-color 0.2s; }
+  .pl-input:focus { border-color:var(--accent); }
+  .pl-result { background:var(--surface2); border-radius:8px; padding:10px 12px; border:1px solid var(--border); display:flex; flex-direction:column; justify-content:center; }
+
+  .notes-area { width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:11px; color:var(--text); font-family:'Space Mono',monospace; font-size:11px; resize:vertical; min-height:72px; outline:none; transition:border-color 0.2s; margin-top:6px; }
+  .notes-area:focus { border-color:var(--accent); }
+  .notes-area::placeholder { color:var(--muted); }
+  .notes-label { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); }
+
+  .rules-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .rule-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:12px; }
+  .rule-card-title { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--muted); margin-bottom:8px; }
+  .rule-item { font-size:11px; color:var(--text); padding:4px 0; border-bottom:1px solid var(--border); font-family:'Space Mono',monospace; line-height:1.5; display:flex; gap:6px; align-items:flex-start; }
+  .rule-item:last-child { border-bottom:none; }
+  .rule-dot { width:5px; height:5px; border-radius:50%; margin-top:5px; flex-shrink:0; }
+  .dot-green { background:var(--green); }
+  .dot-red { background:var(--red); }
+  .dot-amber { background:var(--amber); }
+
+  .info-box { background:rgba(0,188,212,0.05); border:1px solid rgba(0,188,212,0.15); border-radius:10px; padding:14px 16px; margin-bottom:20px; }
+  .info-box-title { font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:var(--accent); margin-bottom:8px; }
+  .info-row { display:flex; gap:10px; align-items:flex-start; padding:5px 0; border-bottom:1px solid rgba(0,188,212,0.08); }
+  .info-row:last-child { border-bottom:none; }
+  .info-name { font-size:11px; font-weight:700; color:var(--text); min-width:140px; font-family:'Space Mono',monospace; }
+  .info-desc { font-size:11px; color:var(--muted); line-height:1.5; }
+  .lag-badge { font-size:9px; padding:2px 6px; border-radius:3px; font-weight:700; flex-shrink:0; margin-top:1px; }
+  .lag-0 { background:rgba(0,230,118,0.15); color:var(--green); }
+  .lag-low { background:rgba(255,179,0,0.12); color:var(--amber); }
+  .lag-high { background:rgba(90,112,119,0.2); color:var(--muted); }
+
+  .footer-note { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; text-align:center; padding:16px 24px; border-top:1px solid var(--border); margin-top:8px; }
+
+  /* scrollbar */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">N</div>
+    <div>
+      <div class="logo-text">NEPSE CHECKER</div>
+      <div class="logo-sub">Daku's Trade Decision Tool</div>
+    </div>
+  </div>
+  <span class="version-badge">v2.0 — LEADING INDICATORS</span>
+</header>
+
+<div class="stock-bar">
+  <input type="text" class="inp-symbol" id="stockSymbol" placeholder="SYMBOL (e.g. NGPL)" maxlength="10">
+  <input type="number" class="inp-num" id="currentPrice" placeholder="Current price Rs." min="0" oninput="syncPrices()">
+  <input type="number" class="inp-num" id="entryPrice" placeholder="Your avg cost Rs." min="0" oninput="syncCost()">
+  <button class="reset-btn" onclick="resetAll()">↺ Reset all</button>
+</div>
+
+<div class="tabs">
+  <div class="tab buy active" onclick="switchTab('buy')">▲ BUY CHECKLIST</div>
+  <div class="tab sell" onclick="switchTab('sell')">▼ SELL CHECKLIST</div>
+</div>
+
+<div class="content">
+
+<!-- ═══════════════ BUY PANEL ═══════════════ -->
+<div class="panel buy active" id="buyPanel">
+
+  <div class="verdict-card neutral" id="buyVerdict">
+    <div class="verdict-top">
+      <div class="verdict-icon">◎</div>
+      <div>
+        <div class="verdict-label">Buy Signal Verdict</div>
+        <div class="verdict-title" id="buyVerdictTitle">Start checking...</div>
+      </div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="buyPBar"></div></div>
+    <div class="score-text"><span id="buyScoreTxt">0 of 22 checked</span><span id="buyPct">0%</span></div>
+    <div class="score-grid">
+      <div class="score-mini"><div class="score-mini-label">FUNDAMENTALS</div><div class="score-mini-val" id="sFund" style="color:var(--muted)">0/5</div></div>
+      <div class="score-mini"><div class="score-mini-label">LAGGING TECH</div><div class="score-mini-val" id="sLag" style="color:var(--muted)">0/5</div></div>
+      <div class="score-mini"><div class="score-mini-label">LEADING TECH</div><div class="score-mini-val" id="sLead" style="color:var(--muted)">0/7</div></div>
+      <div class="score-mini"><div class="score-mini-label">MARKET</div><div class="score-mini-val" id="sMkt" style="color:var(--muted)">0/5</div></div>
+    </div>
+    <div class="verdict-desc" id="buyVerdictDesc">Tick the boxes below. Verdict updates in real-time.</div>
+  </div>
+
+  <div class="blocker-alert" id="buyBlocker"></div>
+
+  <!-- INDICATOR LEGEND -->
+  <div class="info-box">
+    <div class="info-box-title">Indicator Guide — Lagging vs Leading</div>
+    <div class="info-row"><span class="info-name">RSI / MACD / BB</span><span class="lag-badge lag-high">LAGGING</span><span class="info-desc">React AFTER price moves. Confirm trend but miss early entry.</span></div>
+    <div class="info-row"><span class="info-name">OBV / VPT</span><span class="lag-badge lag-0">LEADING</span><span class="info-desc">Volume-based. Rise before price moves. Spot accumulation early.</span></div>
+    <div class="info-row"><span class="info-name">MFI (Vol-RSI)</span><span class="lag-badge lag-0">LEADING</span><span class="info-desc">RSI with volume weight. More accurate buy/sell signals than plain RSI.</span></div>
+    <div class="info-row"><span class="info-name">StochRSI</span><span class="lag-badge lag-low">FASTER</span><span class="info-desc">Signals 3–5 days before regular RSI. Crosses above 0.2 = early buy.</span></div>
+    <div class="info-row"><span class="info-name">Williams %R</span><span class="lag-badge lag-0">LEADING</span><span class="info-desc">Below -80 = oversold. Above -20 = overbought. Signals before RSI.</span></div>
+    <div class="info-row"><span class="info-name">VWAP</span><span class="lag-badge lag-0">REAL-TIME</span><span class="info-desc">Fair price today. Above VWAP = buyers in control right now.</span></div>
+    <div class="info-row"><span class="info-name">Candlestick</span><span class="lag-badge lag-0">ZERO LAG</span><span class="info-desc">Price action itself. Hammer, engulfing, doji give instant signals.</span></div>
+  </div>
+
+  <!-- SECTION 1: FUNDAMENTALS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">01 — Fundamentals</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-lagging">ALWAYS CHECK FIRST</span><span class="section-score" id="fScore">0/5</span></div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>CRITICAL = instant disqualify if failed</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>IMPORTANT = strong weight on verdict</div>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="eps" data-critical="true" data-group="fund">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">EPS is positive (not negative)</div>
+        <div class="check-hint">Company must be making a profit. Negative EPS = losing money = don't buy.</div>
+        <div class="check-how">→ Check ShareHub / MeroLagani company page → Performance Value → EPS</div>
+      </div>
+      <span class="check-tag tag-critical">CRITICAL</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="pe" data-group="fund">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">P/E ratio below 100 (ideally below 50)</div>
+        <div class="check-hint">NGPL PE ~235 = expensive. PURE PE 336 = avoid. Below 50 = genuinely fair.</div>
+        <div class="check-how">→ ShareHub → Overview → P/E Ratio</div>
+      </div>
+      <span class="check-tag tag-important">IMPORTANT</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="div" data-group="fund">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Has dividend history (paid at least once)</div>
+        <div class="check-hint">Real profits are shared with shareholders. HFIN/SOHL zero dividends = speculation.</div>
+        <div class="check-how">→ ShareHub → Dividends tab → check history</div>
+      </div>
+      <span class="check-tag tag-important">IMPORTANT</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="ipo30" data-critical="true" data-group="fund">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Listed 30+ days ago (not a fresh IPO)</div>
+        <div class="check-hint">Fresh listings run on pure FOMO. If already 5x from IPO price — too late.</div>
+        <div class="check-how">→ ShareHub → General Info → Listing Date</div>
+      </div>
+      <span class="check-tag tag-critical">CRITICAL</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="float" data-group="fund">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Public float above 30% (promoters hold less than 70%)</div>
+        <div class="check-hint">80% promoter locked = manipulatable. NGPL 100% public = genuine price discovery.</div>
+        <div class="check-how">→ ShareHub → Ownership Structure → Public Share %</div>
+      </div>
+      <span class="check-tag tag-important">IMPORTANT</span>
+    </div>
+  </div>
+
+  <!-- SECTION 2: LAGGING INDICATORS -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">02 — Lagging Indicators (Trend Confirmation)</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-lagging">LAGGING</span><span class="section-score" id="lagScore">0/5</span></div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div>These confirm a trend that already started — use to validate, not to enter</div>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="ema9" data-group="lag">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Price is above EMA 9</div>
+        <div class="check-hint">Short-term trend is up. Price crossing above EMA 9 = momentum shift.</div>
+        <div class="check-how">→ NepseAlpha chart → Add indicator → EMA → period 9</div>
+      </div>
+      <span class="check-tag tag-confirm">CONFIRM</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="bb" data-group="lag">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Price is above middle Bollinger Band (20MA)</div>
+        <div class="check-hint">Middle BB = trend divider. Above = uptrend zone. Below = downtrend zone.</div>
+        <div class="check-how">→ Add BB indicator (20,2) → price must be above middle orange line</div>
+      </div>
+      <span class="check-tag tag-important">IMPORTANT</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="rsi50" data-group="lag">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">RSI (14) is above 50 and pointing up</div>
+        <div class="check-hint">RSI above 50 = bullish momentum. Ideal buy zone: 52–65. Above 70 = overbought.</div>
+        <div class="check-how">→ Add RSI(14) → value must be above 50 and rising</div>
+      </div>
+      <span class="check-tag tag-important">IMPORTANT</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="macd" data-group="lag">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">MACD line crossed above signal line (histogram green)</div>
+        <div class="check-hint">Bullish crossover = trend shift confirmed. Green histogram bars = momentum building.</div>
+        <div class="check-how">→ Add MACD(12,26,9) → MACD line (blue) must be above signal line (orange)</div>
+      </div>
+      <span class="check-tag tag-confirm">CONFIRM</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="accum" data-group="lag">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Accumulation/Distribution line is rising</div>
+        <div class="check-hint">Institutions buying = Accum/Dist goes up. Falling = smart money leaving. Like PURE -260K.</div>
+        <div class="check-how">→ Add Accum/Dist indicator → line must be trending upward</div>
+      </div>
+      <span class="check-tag tag-confirm">CONFIRM</span>
+    </div>
+  </div>
+
+  <!-- SECTION 3: LEADING INDICATORS (NEW) -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">03 — Leading Indicators (Early Signals)</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-leading">LEADING — LESS LAG</span><span class="section-score" id="leadScore">0/7</span></div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>These signal BEFORE price moves — earlier entries, better risk/reward</div>
+    </div>
+
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="obv" data-group="lead">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">OBV (On-Balance Volume) is rising</div>
+        <div class="check-hint">OBV adds volume on up days, subtracts on down days. Rising OBV = institutions buying quietly before price moves. This is the #1 early signal.</div>
+        <div class="check-how">→ NepseAlpha / TradingView → Add OBV indicator → line must be trending UP and making higher highs</div>
+      </div>
+      <span class="check-tag tag-leading">LEADING</span>
+    </div>
+
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="mfi" data-group="lead">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">MFI (Money Flow Index) is above 50</div>
+        <div class="check-hint">MFI = volume-weighted RSI. More accurate than plain RSI. Above 50 = money flowing IN. Below 20 = extreme oversold = bounce likely. Above 80 = overbought.</div>
+        <div class="check-how">→ Add MFI(14) → value must be above 50 and rising. Below 25 with price stabilising = oversold bounce signal</div>
+      </div>
+      <span class="check-tag tag-leading">LEADING</span>
+    </div>
+
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="stochrsi" data-group="lead">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">StochRSI has crossed above 0.2 from below</div>
+        <div class="check-hint">StochRSI is faster than RSI — signals 3–5 days earlier. Crossing above 0.2 (20) = early buy signal. Regular RSI would only confirm this days later.</div>
+        <div class="check-how">→ Add Stochastic RSI(14,3,3) → K line must cross above 20 from below (oversold exit)</div>
+      </div>
+      <span class="check-tag tag-leading">LEADING</span>
+    </div>
+
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="willr" data-group="lead">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Williams %R is above -80 (exiting oversold zone)</div>
+        <div class="check-hint">Williams %R below -80 = deeply oversold. When it crosses back above -80 moving toward -20 = early buy signal, usually 2–3 days before RSI confirms it.</div>
+        <div class="check-how">→ Add Williams %R(14) → value must be rising above -80 line. Below -80 = wait. Above -80 and rising = entry zone.</div>
+      </div>
+      <span class="check-tag tag-leading">LEADING</span>
+    </div>
+
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="vwap" data-group="lead">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Price is trading above VWAP</div>
+        <div class="check-hint">VWAP = today's fair price weighted by volume. Above VWAP = buyers in control right now (zero lag, real-time signal). Below VWAP = sellers winning today.</div>
+        <div class="check-how">→ Add VWAP indicator → current price must be ABOVE the VWAP line. Check intraday (1h or 15m chart).</div>
+      </div>
+      <span class="check-tag tag-leading">LEADING</span>
+    </div>
+
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="candle" data-group="lead">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Bullish candlestick pattern at support level</div>
+        <div class="check-hint">Zero lag — pure price action. Hammer at support = strong buy. Bullish engulfing (green candle covers previous red) = buyers taking over. Doji at support = reversal coming.</div>
+        <div class="check-how">→ Daily chart → look for: Hammer (long lower wick), Bullish Engulfing, Morning Star, or Doji at key support (S1/MA/BB lower band)</div>
+      </div>
+      <span class="check-tag tag-price">PRICE ACTION</span>
+    </div>
+
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="obv_div" data-group="lead">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">OBV/MFI is rising while price is flat or dipping (bullish divergence)</div>
+        <div class="check-hint">THIS IS THE MOST POWERFUL SIGNAL. Price going down but OBV going up = hidden buying. Institutions accumulating while retail sells. Price will follow OBV upward soon.</div>
+        <div class="check-how">→ Compare OBV line direction vs price direction. If price making lower lows but OBV making higher lows = STRONG buy signal ahead.</div>
+      </div>
+      <span class="check-tag tag-leading">DIVERGENCE</span>
+    </div>
+  </div>
+
+  <!-- SECTION 4: MARKET -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">04 — Market Conditions & Order Book</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-lagging">CONTEXT</span><span class="section-score" id="mktScore">0/5</span></div>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="nepsegreen" data-group="mkt">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">NEPSE index is green today (+0.5% or more)</div>
+        <div class="check-hint">Don't swim against the tide. Buying in a red market adds unnecessary risk.</div>
+        <div class="check-how">→ Check NEPSE index on NepseAlpha or ShareSansar home page</div>
+      </div>
+      <span class="check-tag tag-important">IMPORTANT</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="sector" data-group="mkt">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Stock's sector is among top gainers today</div>
+        <div class="check-hint">Hydro leading? Buy hydro. Banking weak? Skip banks. Sector rotation is real.</div>
+        <div class="check-how">→ NepseAlpha → Sector List (left sidebar) → your sector must be green</div>
+      </div>
+      <span class="check-tag tag-confirm">CONFIRM</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="buyq" data-group="mkt">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Buy queue total is larger than sell queue total</div>
+        <div class="check-hint">More buyers waiting = price pressure upward. Check Top 5 Buy vs Sell total quantities.</div>
+        <div class="check-how">→ Open broker TMS or NepseAlpha market depth → Total Qty Buy > Total Qty Sell</div>
+      </div>
+      <span class="check-tag tag-confirm">CONFIRM</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="volume" data-group="mkt">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Today's volume is above the 30-day average</div>
+        <div class="check-hint">High volume confirms conviction. Low volume green days often reverse next session.</div>
+        <div class="check-how">→ Compare today's volume bar to recent bars on daily chart. Today must be taller than average.</div>
+      </div>
+      <span class="check-tag tag-confirm">CONFIRM</span>
+    </div>
+    <div class="check-item buy-item" onclick="toggle(this)" data-id="notup10" data-critical="true" data-group="mkt">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Stock is NOT already up 10%+ today (no chasing)</div>
+        <div class="check-hint">The rocket already launched. Buying +10% stocks is how you get burned. Wait for next dip.</div>
+        <div class="check-how">→ Check % change on broker or ShareHub. If already +10–15% today = skip entirely.</div>
+      </div>
+      <span class="check-tag tag-critical">CRITICAL</span>
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div class="notes-label">Trade Notes</div>
+    <textarea class="notes-area" placeholder="e.g. Buy 18 NABIL @ Rs.528 | SL: Rs.510 | T1: Rs.547 | T2: Rs.565 | Reason: BB support + OBV rising"></textarea>
+  </div>
+
+</div>
+
+<!-- ═══════════════ SELL PANEL ═══════════════ -->
+<div class="panel sell" id="sellPanel">
+
+  <div class="verdict-card neutral" id="sellVerdict">
+    <div class="verdict-top">
+      <div class="verdict-icon">◎</div>
+      <div>
+        <div class="verdict-label">Sell Signal Verdict</div>
+        <div class="verdict-title" id="sellVerdictTitle">Start checking...</div>
+      </div>
+    </div>
+    <div class="progress-wrap"><div class="progress-bar" id="sellPBar"></div></div>
+    <div class="score-text"><span id="sellScoreTxt">0 of 14 checked</span><span id="sellPct">0%</span></div>
+    <div class="score-grid">
+      <div class="score-mini"><div class="score-mini-label">IMMEDIATE</div><div class="score-mini-val" id="sImm" style="color:var(--muted)">0/4</div></div>
+      <div class="score-mini"><div class="score-mini-label">LEADING SELL</div><div class="score-mini-val" id="sLeadSell" style="color:var(--muted)">0/4</div></div>
+      <div class="score-mini"><div class="score-mini-label">PARTIAL EXIT</div><div class="score-mini-val" id="sPart" style="color:var(--muted)">0/3</div></div>
+      <div class="score-mini"><div class="score-mini-label">FULL EXIT</div><div class="score-mini-val" id="sFull" style="color:var(--muted)">0/3</div></div>
+    </div>
+    <div class="verdict-desc" id="sellVerdictDesc">Check boxes below to get your sell verdict.</div>
+  </div>
+
+  <div class="blocker-alert" id="sellBlocker"></div>
+
+  <!-- IMMEDIATE SELL -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">01 — Immediate Sell (Exit Now)</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-lagging">URGENT</span><span class="section-score" id="immScore">0/4</span></div>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="sl" data-urgent="true">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Price closed below my stop loss level</div>
+        <div class="check-hint">No debate. No hoping. Stop loss is a contract with yourself. Break it = permanent discipline damage.</div>
+        <div class="check-how">→ Compare today's closing price with your stop loss. If below = SELL ALL, no exceptions.</div>
+      </div>
+      <span class="check-tag tag-critical">SELL NOW</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="badnews" data-urgent="true">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Company announced bad news (losses, legal issues, dividend cut)</div>
+        <div class="check-hint">The reason you bought no longer exists. Exit before others do.</div>
+        <div class="check-how">→ Check ShareSansar/NepseAlpha Announcements tab for your stock daily</div>
+      </div>
+      <span class="check-tag tag-critical">SELL NOW</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="macdflip" data-urgent="true">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">MACD turned bearish crossover after my entry</div>
+        <div class="check-hint">MACD line crossed below signal line after you bought = momentum reversed against you.</div>
+        <div class="check-how">→ Check MACD daily. If previously bullish but now histogram turned red = exit or tighten SL immediately.</div>
+      </div>
+      <span class="check-tag tag-critical">SELL NOW</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="epsneg" data-urgent="true">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">New quarterly report shows EPS turned negative</div>
+        <div class="check-hint">Company was profitable when you bought. Now making losses. Story changed — exit.</div>
+        <div class="check-how">→ ShareHub → Fundamental → check latest quarterly EPS</div>
+      </div>
+      <span class="check-tag tag-critical">SELL NOW</span>
+    </div>
+  </div>
+
+  <!-- LEADING SELL SIGNALS (NEW) -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">02 — Leading Sell Signals (Early Warning)</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-leading">LEADING — ACT EARLY</span><span class="section-score" id="leadSellScore">0/4</span></div>
+    </div>
+    <div class="legend-row">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>These warn you BEFORE the price drops — exit early, protect more profit</div>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="obv_fall">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">OBV is falling while price is still up (bearish divergence)</div>
+        <div class="check-hint">Price making new highs but OBV declining = hidden selling. Smart money is quietly exiting while price is still high. Price will follow OBV down soon. This is the #1 early exit signal.</div>
+        <div class="check-how">→ OBV indicator → if price at resistance but OBV making lower highs = institutions distributing. Sell before retail notices.</div>
+      </div>
+      <span class="check-tag tag-leading">EARLY WARNING</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="mfi_fall">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">MFI has crossed below 50 (or is above 80 = overbought)</div>
+        <div class="check-hint">MFI below 50 = money flowing OUT. This happens 2–3 days before RSI crosses below 50. MFI above 80 = extreme overbought = reduce position now before reversal.</div>
+        <div class="check-how">→ MFI(14) → if crossing from above to below 50 = early sell. If above 80 = sell 50% immediately.</div>
+      </div>
+      <span class="check-tag tag-leading">EARLY WARNING</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="willr_sell">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Williams %R has crossed below -20 (entering overbought → reversal)</div>
+        <div class="check-hint">%R near -20 = overbought. When it turns and crosses below -20 going toward -80 = early sell signal, typically 2–3 days before RSI confirms overbought.</div>
+        <div class="check-how">→ Williams %R(14) → if above -20 and starting to fall = early exit zone. Start reducing position.</div>
+      </div>
+      <span class="check-tag tag-leading">EARLY WARNING</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="candle_bear">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Bearish candlestick pattern at resistance level</div>
+        <div class="check-hint">Zero lag price action signals. Shooting Star (long upper wick at top) = rejected at resistance. Bearish Engulfing (red candle covers green) = sellers taking over. Doji at top = indecision before drop.</div>
+        <div class="check-how">→ Daily chart near your target/resistance → look for: Shooting Star, Bearish Engulfing, Evening Star, or large red candle after multiple green days.</div>
+      </div>
+      <span class="check-tag tag-price">PRICE ACTION</span>
+    </div>
+  </div>
+
+  <!-- PARTIAL SELL -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">03 — Partial Sell (50%)</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-lagging">TAKE PROFIT</span><span class="section-score" id="partScore">0/3</span></div>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="target1">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Stock has reached my first target price</div>
+        <div class="check-hint">Sell 50% at T1. Move stop loss to breakeven on remaining 50%. Let rest ride to T2.</div>
+        <div class="check-how">→ Compare LTP with your written T1. If at or above = sell half right now.</div>
+      </div>
+      <span class="check-tag tag-important">PARTIAL</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="rsi70">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">RSI (14) has reached above 70 (overbought)</div>
+        <div class="check-hint">RSI above 70 = stock is overextended. Not a guaranteed top but sell at least 50% to lock in gains before pullback.</div>
+        <div class="check-how">→ RSI indicator → value above 70 dashed line = reduce position by 50%</div>
+      </div>
+      <span class="check-tag tag-important">PARTIAL</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="up20">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Stock is up 20–30% from my entry in a short period</div>
+        <div class="check-hint">Quick 20% = book 50% now. Don't let winning trade turn into average. Greed is the enemy of profit.</div>
+        <div class="check-how">→ Use P/L calculator below → if return % is 20–30% after a short time = take partial profit</div>
+      </div>
+      <span class="check-tag tag-important">PARTIAL</span>
+    </div>
+  </div>
+
+  <!-- FULL EXIT -->
+  <div class="section">
+    <div class="section-header">
+      <span class="section-title">04 — Full Exit</span>
+      <div style="display:flex;gap:6px;align-items:center;"><span class="section-badge badge-lagging">EXIT ALL</span><span class="section-score" id="fullScore">0/3</span></div>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="support_break">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Price broke major support with high volume (close below)</div>
+        <div class="check-hint">Support break + high red volume = institutional exit. This is not a dip — it's a trend change. Get out fully.</div>
+        <div class="check-how">→ Daily close must be BELOW key support (S1/MA30/BB lower). Volume bar must be bigger than recent average.</div>
+      </div>
+      <span class="check-tag tag-critical">FULL EXIT</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="nepsedown5">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">NEPSE index dropped 5%+ in one week</div>
+        <div class="check-hint">Market-wide crash. Almost all stocks fall together. Cash is king. Exit and wait for bottom.</div>
+        <div class="check-how">→ Compare NEPSE index today vs 5 trading days ago. If down 5%+ = reduce all positions to 50% minimum.</div>
+      </div>
+      <span class="check-tag tag-critical">FULL EXIT</span>
+    </div>
+    <div class="check-item sell-item" onclick="toggleSell(this)" data-id="profit30_weak">
+      <div class="checkbox"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#0a0e0f" stroke-width="2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="check-content">
+        <div class="check-label">Up 30%+ AND 3+ indicators now weakening simultaneously</div>
+        <div class="check-hint">Like NGPL at Rs.490–500. You have 30% profit AND RSI falling AND MACD weakening AND OBV declining = the move is done. Exit all. Bank the profit.</div>
+        <div class="check-how">→ Check: (1) P/L above 30%, (2) RSI dropping from high, (3) MACD histogram shrinking, (4) OBV flattening. All 4 = exit everything.</div>
+      </div>
+      <span class="check-tag tag-critical">FULL EXIT</span>
+    </div>
+  </div>
+
+  <!-- P/L CALCULATOR -->
+  <div class="section">
+    <div class="section-header"><span class="section-title">P/L Calculator</span></div>
+    <div class="pl-grid">
+      <div class="pl-input-wrap">
+        <div class="pl-label">Shares held</div>
+        <input type="number" class="pl-input" id="sharesHeld" placeholder="e.g. 41" oninput="calcPL()">
+      </div>
+      <div class="pl-input-wrap">
+        <div class="pl-label">Current price Rs.</div>
+        <input type="number" class="pl-input" id="calcCur" placeholder="LTP" oninput="calcPL()">
+      </div>
+      <div class="pl-input-wrap">
+        <div class="pl-label">Avg cost / share Rs.</div>
+        <input type="number" class="pl-input" id="calcAvg" placeholder="your avg" oninput="calcPL()">
+      </div>
+      <div class="pl-result">
+        <div style="font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;">NET P/L</div>
+        <div id="plVal" style="font-size:20px;font-weight:800;color:var(--muted);font-family:'Space Mono',monospace;">Rs. 0</div>
+        <div id="plPct" style="font-size:12px;color:var(--muted);font-family:'Space Mono',monospace;">0.00%</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-bottom:20px;">
+    <div class="notes-label">Exit Notes</div>
+    <textarea class="notes-area" placeholder="e.g. Selling NGPL 20 shares @ Rs.488 (T1 hit) | OBV diverging | MACD histogram shrinking | Keep 21 shares, move SL to Rs.465"></textarea>
+  </div>
+
+</div>
+
+<!-- QUICK RULES (shown on both tabs) -->
+<div class="rules-grid">
+  <div class="rule-card">
+    <div class="rule-card-title">Never Buy When...</div>
+    <div class="rule-item"><span class="rule-dot dot-red"></span>EPS is negative</div>
+    <div class="rule-item"><span class="rule-dot dot-red"></span>RSI below 45</div>
+    <div class="rule-item"><span class="rule-dot dot-red"></span>OBV falling (bearish div)</div>
+    <div class="rule-item"><span class="rule-dot dot-red"></span>Already +10% today</div>
+    <div class="rule-item"><span class="rule-dot dot-red"></span>New listing under 30d</div>
+    <div class="rule-item"><span class="rule-dot dot-red"></span>Below middle BB</div>
+    <div class="rule-item"><span class="rule-dot dot-red"></span>MFI below 40</div>
+  </div>
+  <div class="rule-card">
+    <div class="rule-card-title">Strong Buy When...</div>
+    <div class="rule-item"><span class="rule-dot dot-green"></span>OBV rising + price flat</div>
+    <div class="rule-item"><span class="rule-dot dot-green"></span>MFI crossing above 50</div>
+    <div class="rule-item"><span class="rule-dot dot-green"></span>StochRSI crossing 0.2</div>
+    <div class="rule-item"><span class="rule-dot dot-green"></span>Hammer at support</div>
+    <div class="rule-item"><span class="rule-dot dot-green"></span>Price above VWAP</div>
+    <div class="rule-item"><span class="rule-dot dot-green"></span>Williams %R above -80</div>
+    <div class="rule-item"><span class="rule-dot dot-green"></span>All 4 sections green</div>
+  </div>
+</div>
+
+</div><!-- end content -->
+
+<div class="footer-note">NEPSE Checker v2 · Built for Daku · Lagging + Leading indicators · Not financial advice</div>
+
+<script>
+  const buyState = {
+    eps:false,pe:false,div:false,ipo30:false,float:false,
+    ema9:false,bb:false,rsi50:false,macd:false,accum:false,
+    obv:false,mfi:false,stochrsi:false,willr:false,vwap:false,candle:false,obv_div:false,
+    nepsegreen:false,sector:false,buyq:false,volume:false,notup10:false
+  };
+  const sellState = {
+    sl:false,badnews:false,macdflip:false,epsneg:false,
+    obv_fall:false,mfi_fall:false,willr_sell:false,candle_bear:false,
+    target1:false,rsi70:false,up20:false,
+    support_break:false,nepsedown5:false,profit30_weak:false
+  };
+
+  function switchTab(tab) {
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    document.querySelector(`.tab.${tab}`).classList.add('active');
+    document.getElementById(`${tab}Panel`).classList.add('active');
+  }
+
+  function toggle(el) {
+    el.classList.toggle('checked');
+    buyState[el.dataset.id] = el.classList.contains('checked');
+    updateBuy();
+  }
+  function toggleSell(el) {
+    el.classList.toggle('checked');
+    sellState[el.dataset.id] = el.classList.contains('checked');
+    updateSell();
+  }
+
+  function colorScore(el, val, max) {
+    el.textContent = val+'/'+max;
+    const r = val/max;
+    el.style.color = r>=0.8?'var(--green)':r>=0.5?'var(--amber)':'var(--muted)';
+  }
+
+  function updateBuy() {
+    const fundK=['eps','pe','div','ipo30','float'];
+    const lagK=['ema9','bb','rsi50','macd','accum'];
+    const leadK=['obv','mfi','stochrsi','willr','vwap','candle','obv_div'];
+    const mktK=['nepsegreen','sector','buyq','volume','notup10'];
+
+    const fC=fundK.filter(k=>buyState[k]).length;
+    const lC=lagK.filter(k=>buyState[k]).length;
+    const ldC=leadK.filter(k=>buyState[k]).length;
+    const mC=mktK.filter(k=>buyState[k]).length;
+    const total=22; const checked=fC+lC+ldC+mC;
+    const pct=Math.round(checked/total*100);
+
+    colorScore(document.getElementById('sFund'),fC,5);
+    colorScore(document.getElementById('sLag'),lC,5);
+    colorScore(document.getElementById('sLead'),ldC,7);
+    colorScore(document.getElementById('sMkt'),mC,5);
+    colorScore(document.getElementById('fScore'),fC,5);
+    colorScore(document.getElementById('lagScore'),lC,5);
+    colorScore(document.getElementById('leadScore'),ldC,7);
+    colorScore(document.getElementById('mktScore'),mC,5);
+
+    document.getElementById('buyScoreTxt').textContent=checked+' of '+total+' checked';
+    document.getElementById('buyPct').textContent=pct+'%';
+    const bar=document.getElementById('buyPBar'); bar.style.width=pct+'%';
+
+    const card=document.getElementById('buyVerdict');
+    const title=document.getElementById('buyVerdictTitle');
+    const desc=document.getElementById('buyVerdictDesc');
+    const blocker=document.getElementById('buyBlocker');
+    card.className='verdict-card';
+
+    // critical check
+    const critFail=[];
+    if(!buyState.eps) critFail.push('EPS must be positive');
+    if(!buyState.ipo30) critFail.push('Avoid new IPO listings');
+    if(!buyState.notup10) critFail.push('Do not chase +10% stocks');
+
+    if(checked>0 && critFail.length>0){
+      blocker.innerHTML='⚠ CRITICAL VIOLATED: '+critFail.join(' · ');
+      blocker.classList.add('visible');
+    } else blocker.classList.remove('visible');
+
+    if(checked===0){
+      card.classList.add('neutral'); title.textContent='Start checking...';
+      desc.textContent='Tick the boxes below. Verdict updates in real-time.';
+      bar.style.background='var(--muted)';
+    } else if(critFail.length>0 && checked>3){
+      card.classList.add('no-trade'); title.textContent='DO NOT BUY';
+      desc.textContent='Critical rules violated. Fix the blockers before considering this trade.';
+      bar.style.background='var(--red)';
+    } else if(pct>=82 && fC>=4 && lC>=4 && ldC>=4 && mC>=4){
+      card.classList.add('strong-buy'); title.textContent='STRONG BUY SIGNAL';
+      desc.textContent='All 4 categories strongly aligned. Fundamentals solid, lagging confirmed, leading indicators positive, market supportive. This is a high-conviction entry.';
+      bar.style.background='var(--green)';
+    } else if(pct>=65 && fC>=3 && (lC+ldC)>=7 && mC>=3){
+      card.classList.add('strong-buy'); title.textContent='GOOD BUY SIGNAL';
+      desc.textContent='Strong alignment across fundamentals and technicals. Leading indicators support entry. Use normal position size with clear stop loss.';
+      bar.style.background='var(--green)';
+    } else if(pct>=50 && fC>=3){
+      card.classList.add('weak-buy'); title.textContent='CAUTIOUS BUY';
+      desc.textContent='Some signals align but not all confirmed. Reduce position size by 50% and set tight stop loss. Wait for one more confirming signal if possible.';
+      bar.style.background='var(--amber)';
+    } else if(pct>=35){
+      card.classList.add('weak-buy'); title.textContent='WAIT — NOT READY YET';
+      desc.textContent='Too many gaps. Missing key signals. Check back tomorrow when more conditions are met.';
+      bar.style.background='var(--amber)';
+    } else {
+      card.classList.add('no-trade'); title.textContent='DO NOT BUY';
+      desc.textContent='Most conditions not met. Protect your capital. Cash is a position too.';
+      bar.style.background='var(--red)';
+    }
+  }
+
+  function updateSell() {
+    const immK=['sl','badnews','macdflip','epsneg'];
+    const leadSellK=['obv_fall','mfi_fall','willr_sell','candle_bear'];
+    const partK=['target1','rsi70','up20'];
+    const fullK=['support_break','nepsedown5','profit30_weak'];
+
+    const iC=immK.filter(k=>sellState[k]).length;
+    const lsC=leadSellK.filter(k=>sellState[k]).length;
+    const pC=partK.filter(k=>sellState[k]).length;
+    const fC=fullK.filter(k=>sellState[k]).length;
+    const total=14; const checked=iC+lsC+pC+fC;
+
+    colorScore(document.getElementById('sImm'),iC,4);
+    colorScore(document.getElementById('sLeadSell'),lsC,4);
+    colorScore(document.getElementById('sPart'),pC,3);
+    colorScore(document.getElementById('sFull'),fC,3);
+    colorScore(document.getElementById('immScore'),iC,4);
+    colorScore(document.getElementById('leadSellScore'),lsC,4);
+    colorScore(document.getElementById('partScore'),pC,3);
+    colorScore(document.getElementById('fullScore'),fC,3);
+
+    document.getElementById('sellScoreTxt').textContent=checked+' of '+total+' checked';
+    document.getElementById('sellPct').textContent=Math.round(checked/total*100)+'%';
+    const bar=document.getElementById('sellPBar'); bar.style.width=Math.round(checked/total*100)+'%';
+
+    const card=document.getElementById('sellVerdict');
+    const title=document.getElementById('sellVerdictTitle');
+    const desc=document.getElementById('sellVerdictDesc');
+    const blocker=document.getElementById('sellBlocker');
+    card.className='verdict-card';
+
+    if(checked===0){
+      card.classList.add('neutral'); title.textContent='Start checking...';
+      desc.textContent='Check boxes to get your sell verdict.';
+      bar.style.background='var(--muted)'; blocker.classList.remove('visible'); return;
+    }
+
+    if(iC>=1){
+      card.classList.add('strong-sell'); title.textContent='SELL IMMEDIATELY — ALL SHARES';
+      const reasons=[sellState.sl?'Stop loss hit.':'', sellState.badnews?'Bad news announced.':'', sellState.macdflip?'MACD bearish crossover.':'', sellState.epsneg?'EPS turned negative.':''].filter(Boolean).join(' ');
+      desc.textContent='Critical exit trigger active. '+reasons+' Do not wait. Exit your full position now.';
+      bar.style.background='var(--red)';
+      blocker.innerHTML='🔴 URGENT: '+reasons+' Exit now — no debate.';
+      blocker.classList.add('visible');
+    } else if(fC>=2 || (fC>=1 && lsC>=2)){
+      card.classList.add('strong-sell'); title.textContent='SELL EVERYTHING';
+      desc.textContent='Multiple full exit conditions triggered. Clear your entire position and hold cash. Re-enter only after conditions reset.';
+      bar.style.background='var(--red)'; blocker.classList.remove('visible');
+    } else if(lsC>=2){
+      card.classList.add('weak-sell'); title.textContent='EARLY WARNING — REDUCE NOW';
+      desc.textContent='Leading indicators showing distribution before price drops. Sell 50–70% now while price is still high. These signals lead price by 2–3 days.';
+      bar.style.background='var(--amber)'; blocker.classList.remove('visible');
+    } else if(fC>=1 || pC>=2 || lsC>=1){
+      card.classList.add('weak-sell'); title.textContent='SELL 50% — TAKE PARTIAL PROFIT';
+      desc.textContent='Partial exit recommended. Book half profit now. Move stop loss to breakeven on remaining shares.';
+      bar.style.background='var(--amber)'; blocker.classList.remove('visible');
+    } else if(pC===1){
+      card.classList.add('hold'); title.textContent='CONSIDER PARTIAL — TIGHTEN SL';
+      desc.textContent='One partial signal present. Review your profit level. Tighten your stop loss but no need to exit yet.';
+      bar.style.background='var(--accent)'; blocker.classList.remove('visible');
+    } else {
+      card.classList.add('hold'); title.textContent='HOLD — No sell signal yet';
+      desc.textContent='No exit conditions triggered. Your trade is still valid. Stay patient and let it run to your target.';
+      bar.style.background='var(--accent)'; blocker.classList.remove('visible');
+    }
+  }
+
+  function calcPL() {
+    const s=parseFloat(document.getElementById('sharesHeld').value)||0;
+    const c=parseFloat(document.getElementById('calcCur').value)||0;
+    const a=parseFloat(document.getElementById('calcAvg').value)||0;
+    if(s&&c&&a){
+      const pl=(c-a)*s; const pct=((c-a)/a)*100;
+      const pv=document.getElementById('plVal'); const pp=document.getElementById('plPct');
+      pv.textContent=(pl>=0?'+':'')+'Rs. '+Math.round(Math.abs(pl)).toLocaleString()+(pl<0?' LOSS':'');
+      pv.style.color=pl>=0?'var(--green)':'var(--red)';
+      pp.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
+      pp.style.color=pl>=0?'var(--green)':'var(--red)';
+    }
+  }
+
+  function syncPrices(){
+    const v=document.getElementById('currentPrice').value;
+    document.getElementById('calcCur').value=v; calcPL();
+  }
+  function syncCost(){
+    const v=document.getElementById('entryPrice').value;
+    document.getElementById('calcAvg').value=v; calcPL();
+  }
+
+  function resetAll(){
+    document.querySelectorAll('.check-item').forEach(el=>{
+      el.classList.remove('checked');
+      const id=el.dataset.id;
+      if(id&&buyState.hasOwnProperty(id)) buyState[id]=false;
+      if(id&&sellState.hasOwnProperty(id)) sellState[id]=false;
+    });
+    ['stockSymbol','currentPrice','entryPrice','sharesHeld','calcCur','calcAvg'].forEach(id=>{
+      const el=document.getElementById(id); if(el) el.value='';
+    });
+    document.querySelectorAll('.notes-area').forEach(t=>t.value='');
+    document.getElementById('plVal').textContent='Rs. 0';
+    document.getElementById('plVal').style.color='var(--muted)';
+    document.getElementById('plPct').textContent='0.00%';
+    document.getElementById('plPct').style.color='var(--muted)';
+    updateBuy(); updateSell();
+  }
+</script>
+</body>
+</html>
