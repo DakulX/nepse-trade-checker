@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEPSE Checker v3 — S-Tier Only</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#08100f; --s1:#0d1a18; --s2:#122320; --border:#1a2e2b;
+  --green:#00e676; --gdim:rgba(0,230,118,0.08); --gborder:rgba(0,230,118,0.22);
+  --red:#ff4060; --rdim:rgba(255,64,96,0.08); --rborder:rgba(255,64,96,0.22);
+  --amber:#ffb300; --adim:rgba(255,179,0,0.08); --aborder:rgba(255,179,0,0.22);
+  --cyan:#00e5ff; --purple:#ce93d8; --text:#dff0ec; --muted:#4a6b66;
+  --s-gold:#ffd700; --a-blue:#64b5f6;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:'Syne',sans-serif;min-height:100vh;padding-bottom:60px;}
+
+/* HEADER */
+header{background:var(--s1);border-bottom:1px solid var(--border);padding:16px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;gap:12px;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:34px;height:34px;background:var(--green);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Space Mono',monospace;font-weight:700;font-size:14px;color:var(--bg);}
+.logo-text{font-size:15px;font-weight:800;letter-spacing:.05em;}
+.logo-sub{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;}
+.v3-badge{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;letter-spacing:.1em;background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(0,230,118,.1));border:1px solid rgba(255,215,0,.35);color:var(--s-gold);}
+
+/* STOCK BAR */
+.sbar{padding:14px 22px;background:var(--s1);border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.sbar input{background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 13px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;}
+.sbar input:focus{border-color:var(--green);}
+.sbar input::placeholder{color:var(--muted);}
+.i-sym{width:120px;text-transform:uppercase;}
+.i-num{width:145px;}
+.rbtn{background:transparent;border:1px solid var(--border);border-radius:7px;padding:8px 14px;color:var(--muted);font-family:'Space Mono',monospace;font-size:11px;cursor:pointer;margin-left:auto;transition:all .2s;}
+.rbtn:hover{border-color:var(--red);color:var(--red);}
+
+/* TABS */
+.tabs{display:flex;padding:14px 22px 0;gap:3px;border-bottom:1px solid var(--border);}
+.tab{padding:9px 18px;border-radius:7px 7px 0 0;font-size:12px;font-weight:700;cursor:pointer;border:1px solid transparent;border-bottom:none;transition:all .2s;color:var(--muted);letter-spacing:.06em;}
+.tab.buy.active{background:var(--gdim);border-color:var(--border);border-bottom-color:var(--gdim);color:var(--green);position:relative;bottom:-1px;}
+.tab.sell.active{background:var(--rdim);border-color:var(--border);border-bottom-color:var(--rdim);color:var(--red);position:relative;bottom:-1px;}
+
+/* CONTENT */
+.content{padding:18px 22px;max-width:740px;}
+.panel{display:none;} .panel.active{display:block;}
+
+/* VERDICT */
+.verdict{border-radius:12px;padding:18px;margin-bottom:18px;border:1px solid var(--border);transition:all .3s;position:relative;overflow:hidden;}
+.verdict::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;transition:background .3s;}
+.v-neutral{background:var(--s1);}
+.v-neutral::before{background:var(--muted);}
+.v-sbuy{background:var(--gdim);border-color:var(--gborder);}
+.v-sbuy::before{background:var(--green);}
+.v-cbuy{background:var(--adim);border-color:var(--aborder);}
+.v-cbuy::before{background:var(--amber);}
+.v-wait{background:var(--adim);border-color:var(--aborder);}
+.v-wait::before{background:var(--amber);}
+.v-no{background:var(--rdim);border-color:var(--rborder);}
+.v-no::before{background:var(--red);}
+.v-hold{background:rgba(0,229,255,.05);border-color:rgba(0,229,255,.2);}
+.v-hold::before{background:var(--cyan);}
+.v-sell{background:var(--rdim);border-color:var(--rborder);}
+.v-sell::before{background:var(--red);}
+.v-psell{background:var(--adim);border-color:var(--aborder);}
+.v-psell::before{background:var(--amber);}
+
+.vtop{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.vicon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.vlabel{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.vtitle{font-size:22px;font-weight:800;}
+.v-neutral .vtitle,.v-neutral .vicon{color:var(--muted);background:rgba(74,107,102,.15);}
+.v-sbuy .vtitle{color:var(--green);} .v-sbuy .vicon{background:rgba(0,230,118,.12);}
+.v-cbuy .vtitle,.v-wait .vtitle{color:var(--amber);} .v-cbuy .vicon,.v-wait .vicon{background:rgba(255,179,0,.12);}
+.v-no .vtitle{color:var(--red);} .v-no .vicon{background:rgba(255,64,96,.12);}
+.v-hold .vtitle{color:var(--cyan);} .v-hold .vicon{background:rgba(0,229,255,.1);}
+.v-sell .vtitle{color:var(--red);} .v-sell .vicon{background:rgba(255,64,96,.12);}
+.v-psell .vtitle{color:var(--amber);} .v-psell .vicon{background:rgba(255,179,0,.12);}
+.vdesc{font-size:12px;color:var(--muted);line-height:1.65;margin-top:8px;}
+
+/* SCORE GRID */
+.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:11px;}
+.smini{background:var(--bg);border-radius:7px;padding:8px 10px;border:1px solid var(--border);}
+.smlabel{font-size:9px;font-family:'Space Mono',monospace;color:var(--muted);margin-bottom:3px;letter-spacing:.05em;text-transform:uppercase;}
+.smval{font-size:17px;font-weight:800;font-family:'Space Mono',monospace;}
+
+.pbar-wrap{margin:10px 0 3px;background:var(--bg);border-radius:4px;height:5px;overflow:hidden;}
+.pbar{height:100%;border-radius:4px;transition:width .4s,background .4s;width:0%;}
+.stxt{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted);display:flex;justify-content:space-between;}
+
+/* BLOCKER */
+.blocker{background:var(--rdim);border:1px solid var(--rborder);border-radius:8px;padding:10px 13px;margin-bottom:12px;font-size:11px;color:var(--red);font-family:'Space Mono',monospace;line-height:1.6;display:none;}
+.blocker.on{display:block;}
+
+/* SECTION */
+.sec{margin-bottom:18px;background:var(--s1);border:1px solid var(--border);border-radius:11px;overflow:hidden;}
+.sec-hd{padding:10px 15px;background:var(--s2);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;}
+.sec-title{font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);}
+.sec-right{display:flex;gap:6px;align-items:center;}
+.sec-score{font-family:'Space Mono',monospace;font-size:11px;color:var(--muted);}
+.tier-badge{font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;letter-spacing:.07em;}
+.tier-s{background:linear-gradient(135deg,rgba(255,215,0,.18),rgba(255,179,0,.1));color:var(--s-gold);border:1px solid rgba(255,215,0,.3);}
+.tier-a{background:rgba(100,181,246,.12);color:var(--a-blue);border:1px solid rgba(100,181,246,.25);}
+.tier-fund{background:rgba(206,147,216,.1);color:var(--purple);border:1px solid rgba(206,147,216,.22);}
+.tier-ctx{background:rgba(74,107,102,.2);color:var(--muted);border:1px solid var(--border);}
+
+/* CHECK ITEMS */
+.ci{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;user-select:none;}
+.ci:last-child{border-bottom:none;}
+.ci.bi:hover{background:rgba(0,230,118,.03);}
+.ci.si:hover{background:rgba(255,64,96,.03);}
+
+.cb{width:20px;height:20px;border-radius:5px;border:1.5px solid var(--border);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .15s;background:var(--bg);}
+.ci.bi.on .cb{background:var(--green);border-color:transparent;}
+.ci.si.on .cb{background:var(--red);border-color:transparent;}
+.cb svg{opacity:0;transform:scale(.5);transition:all .15s;}
+.ci.on .cb svg{opacity:1;transform:scale(1);}
+
+.cc{flex:1;}
+.clabel{font-size:13px;font-weight:600;color:var(--text);line-height:1.4;transition:color .15s;}
+.ci.bi.on .clabel{color:var(--green);}
+.ci.si.on .clabel{color:var(--red);}
+.chint{font-size:11px;color:var(--muted);margin-top:3px;font-family:'Space Mono',monospace;line-height:1.55;}
+.chow{font-size:10px;color:var(--cyan);margin-top:4px;font-family:'Space Mono',monospace;line-height:1.5;opacity:.8;}
+
+/* TAGS */
+.tag{font-size:9px;font-weight:700;padding:3px 7px;border-radius:4px;letter-spacing:.07em;flex-shrink:0;margin-top:2px;white-space:nowrap;}
+.t-crit{background:rgba(255,64,96,.15);color:var(--red);border:1px solid rgba(255,64,96,.3);}
+.t-s{background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(0,230,118,.08));color:var(--s-gold);border:1px solid rgba(255,215,0,.28);}
+.t-a{background:rgba(100,181,246,.1);color:var(--a-blue);border:1px solid rgba(100,181,246,.22);}
+.t-price{background:rgba(206,147,216,.1);color:var(--purple);border:1px solid rgba(206,147,216,.2);}
+.t-urgent{background:rgba(255,64,96,.18);color:var(--red);border:1px solid rgba(255,64,96,.35);}
+.t-warn{background:rgba(255,179,0,.12);color:var(--amber);border:1px solid rgba(255,179,0,.25);}
+
+/* TIER LEGEND */
+.tier-legend{display:flex;gap:10px;padding:9px 15px;background:rgba(0,0,0,.2);border-bottom:1px solid var(--border);flex-wrap:wrap;}
+.tl-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;}
+.tl-dot{width:7px;height:7px;border-radius:2px;flex-shrink:0;}
+
+/* REMOVED INDICATOR NOTE */
+.removed-note{background:rgba(74,107,102,.08);border:1px solid var(--border);border-radius:9px;padding:12px 15px;margin-bottom:18px;}
+.rn-title{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.rn-row{display:flex;align-items:flex-start;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;}
+.rn-row:last-child{border-bottom:none;}
+.rn-name{font-family:'Space Mono',monospace;font-weight:700;color:var(--red);min-width:120px;text-decoration:line-through;opacity:.7;}
+.rn-why{color:var(--muted);line-height:1.5;}
+
+/* PL CALC */
+.plgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px;}
+.pll{font-size:10px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:5px;letter-spacing:.05em;text-transform:uppercase;}
+.pli{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:7px;padding:8px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:12px;outline:none;transition:border-color .2s;}
+.pli:focus{border-color:var(--green);}
+.plr{background:var(--s2);border-radius:8px;padding:10px 12px;border:1px solid var(--border);display:flex;flex-direction:column;justify-content:center;}
+
+/* NOTES */
+.nwrap{margin-bottom:18px;}
+.nlabel{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.ntxt{width:100%;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:'Space Mono',monospace;font-size:11px;resize:vertical;min-height:70px;outline:none;transition:border-color .2s;margin-top:6px;}
+.ntxt:focus{border-color:var(--green);}
+.ntxt::placeholder{color:var(--muted);}
+
+/* RULES */
+.rgrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:18px;}
+.rcard{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:12px;}
+.rct{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.ri{font-size:11px;color:var(--text);padding:4px 0;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace;line-height:1.5;display:flex;gap:6px;align-items:flex-start;}
+.ri:last-child{border-bottom:none;}
+.rd{width:5px;height:5px;border-radius:50%;margin-top:5px;flex-shrink:0;}
+.dg{background:var(--green);} .dr{background:var(--red);} .da{background:var(--amber);}
+.dgo{background:var(--s-gold);}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;}
+::-webkit-scrollbar-track{background:var(--bg);}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+.footer{font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;text-align:center;padding:16px 22px;border-top:1px solid var(--border);margin-top:6px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">N</div>
+    <div>
+      <div class="logo-text">NEPSE CHECKER</div>
+      <div class="logo-sub">Daku's Trade Tool — S-Tier Edition</div>
+    </div>
+  </div>
+  <span class="v3-badge">★ v3 — S-TIER ONLY</span>
+</header>
+
+<div class="sbar">
+  <input type="text" class="i-sym" id="sym" placeholder="SYMBOL" maxlength="10">
+  <input type="number" class="i-num" id="cprice" placeholder="Current price Rs." oninput="syncP()">
+  <input type="number" class="i-num" id="aprice" placeholder="Avg cost Rs." oninput="syncA()">
+  <button class="rbtn" onclick="resetAll()">↺ Reset</button>
+</div>
+
+<div class="tabs">
+  <div class="tab buy active" onclick="sw('buy')">▲ BUY</div>
+  <div class="tab sell" onclick="sw('sell')">▼ SELL</div>
+</div>
+
+<div class="content">
+
+<!-- ══════ BUY PANEL ══════ -->
+<div class="panel buy active" id="buyPanel">
+
+  <div class="verdict v-neutral" id="bverd">
+    <div class="vtop">
+      <div class="vicon">◎</div>
+      <div><div class="vlabel">Buy Signal</div><div class="vtitle" id="bvtitle">Start checking...</div></div>
+    </div>
+    <div class="pbar-wrap"><div class="pbar" id="bpbar"></div></div>
+    <div class="stxt"><span id="bstxt">0 of 18 checked</span><span id="bpct">0%</span></div>
+    <div class="sgrid">
+      <div class="smini"><div class="smlabel">FUNDAMENTALS</div><div class="smval" id="bsFund" style="color:var(--muted)">0/4</div></div>
+      <div class="smini"><div class="smlabel">S-TIER SIGNALS</div><div class="smval" id="bsS" style="color:var(--muted)">0/7</div></div>
+      <div class="smini"><div class="smlabel">A-TIER + CONTEXT</div><div class="smval" id="bsA" style="color:var(--muted)">0/7</div></div>
+    </div>
+    <div class="vdesc" id="bvdesc">Tick the boxes below — verdict updates live.</div>
+  </div>
+
+  <div class="blocker" id="bblock"></div>
+
+  <!-- REMOVED INDICATORS NOTE -->
+  <div class="removed-note">
+    <div class="rn-title">Removed from v3 — Why</div>
+    <div class="rn-row"><span class="rn-name">MACD</span><span class="rn-why">Derived from EMA. Tells you same thing as EMA 9 + price position, 3–5 days later. Redundant when OBV + StochRSI are present.</span></div>
+    <div class="rn-row"><span class="rn-name">Accum/Dist</span><span class="rn-why">OBV does the same job better. Accum/Dist also gives wrong readings on Heikin Ashi charts (proven on PURE Apr 27).</span></div>
+    <div class="rn-row"><span class="rn-name">Plain RSI (14)</span><span class="rn-why">StochRSI is 3–5 days faster. MFI adds volume weight making it more accurate. RSI alone adds nothing extra.</span></div>
+  </div>
+
+  <!-- SECTION 1: FUNDAMENTALS -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">01 — Fundamentals</span>
+      <div class="sec-right"><span class="tier-badge tier-fund">CHECK FIRST — ALWAYS</span><span class="sec-score" id="f1">0/4</span></div>
+    </div>
+    <div class="tier-legend">
+      <div class="tl-item"><div class="tl-dot" style="background:var(--red)"></div>CRITICAL = instant disqualify</div>
+      <div class="tl-item"><div class="tl-dot" style="background:var(--purple)"></div>IMPORTANT = heavy weight on verdict</div>
+    </div>
+    <div class="ci bi" onclick="tog(this)" data-id="eps" data-crit="1" data-g="fund">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">EPS is positive — company is making profit</div>
+        <div class="chint">Negative EPS = losing money = never buy. JOSHI EPS -7.17 was instant disqualify. No exceptions.</div>
+        <div class="chow">→ ShareHub / MeroLagani → Overview → EPS value must be positive number</div>
+      </div>
+      <span class="tag t-crit">CRITICAL</span>
+    </div>
+    <div class="ci bi" onclick="tog(this)" data-id="pe" data-g="fund">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">P/E ratio below 100 (ideally below 50)</div>
+        <div class="chint">PURE PE 336, SOHL PE 3523 = speculation only. Real value stocks: PE under 50. Banking PE often 10–20.</div>
+        <div class="chow">→ ShareHub → Overview → P/E Ratio</div>
+      </div>
+      <span class="tag t-warn">IMPORTANT</span>
+    </div>
+    <div class="ci bi" onclick="tog(this)" data-id="notipo" data-crit="1" data-g="fund">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">NOT a fresh IPO listing (30+ days since listing)</div>
+        <div class="chint">First 30 days = pure FOMO and manipulation. If already 5x from IPO price — rocket has launched. Don't chase.</div>
+        <div class="chow">→ ShareHub → General Info → Listing Date → must be 30+ days ago</div>
+      </div>
+      <span class="tag t-crit">CRITICAL</span>
+    </div>
+    <div class="ci bi" onclick="tog(this)" data-id="notup10" data-crit="1" data-g="fund">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Stock is NOT already up 10%+ today (no chasing)</div>
+        <div class="chint">Buying +10% stocks is the fastest way to lose money. The move is done. Wait for the next dip entry.</div>
+        <div class="chow">→ Check % change column in broker or ShareHub. If +10–15% today = skip entirely, zero exceptions.</div>
+      </div>
+      <span class="tag t-crit">CRITICAL</span>
+    </div>
+  </div>
+
+  <!-- SECTION 2: S-TIER LEADING INDICATORS -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">02 — S-Tier Leading Indicators</span>
+      <div class="sec-right"><span class="tier-badge tier-s">★ S-TIER — HIGHEST PRIORITY</span><span class="sec-score" id="f2">0/7</span></div>
+    </div>
+    <div class="tier-legend">
+      <div class="tl-item"><div class="tl-dot" style="background:var(--s-gold)"></div>S-Tier = leads price by 2–5 days. These fire BEFORE price moves.</div>
+      <div class="tl-item"><div class="tl-dot" style="background:var(--green)"></div>Weight 2x compared to A-tier signals</div>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="obv_up" data-g="stier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">OBV (On-Balance Volume) is rising and making higher highs</div>
+        <div class="chint">OBV is the single most reliable leading indicator. It rises when institutions buy quietly before price moves. NGPL OBV was rising weeks before the big move. If OBV up + price flat = accumulation happening.</div>
+        <div class="chow">→ TradingView/NepseAlpha → Add OBV → line must be trending UP and making higher peaks over last 5–10 sessions</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="obv_div" data-g="stier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">OBV Bullish Divergence — OBV rising while price is flat or dipping</div>
+        <div class="chint">THE MOST POWERFUL SIGNAL IN THIS ENTIRE CHECKLIST. Price going down but OBV going up = institutions accumulating while retail panics and sells. Price will always follow OBV eventually. This is how PURE set up in early April.</div>
+        <div class="chow">→ Compare OBV direction vs price direction. Price making lower lows but OBV making higher lows = STRONG early buy. Enter before the breakout.</div>
+      </div>
+      <span class="tag t-s">★ DIVERGENCE</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="mfi_above" data-g="stier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">MFI (Money Flow Index) is above 50 and rising</div>
+        <div class="chint">MFI = RSI + volume combined. More accurate than plain RSI because it includes actual money flow. Above 50 = money flowing IN. Rising MFI = increasing buying pressure. KBL MFI was falling even when price held = early warning.</div>
+        <div class="chow">→ Add MFI(14) → value above 50 dashed line AND line must be pointing upward. If MFI below 40 = avoid completely.</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="mfi_cross" data-g="stier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">MFI crossed above 50 from below (fresh crossover)</div>
+        <div class="chint">Even stronger than MFI just being above 50. A fresh MFI cross above 50 signals a new wave of buying momentum beginning. This is the entry trigger. Like PURE April 8–10 — MFI crossed 50 and OBV started rising simultaneously.</div>
+        <div class="chow">→ Look for MFI line crossing the 50 horizontal line from below. This crossover + OBV rising = highest conviction buy setup.</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="stoch_cross" data-g="stier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">StochRSI K line crossed above D line AND above 20 (from oversold)</div>
+        <div class="chint">StochRSI is 3–5 days faster than plain RSI. When K (blue/faster line) crosses above D (orange/slower) while both are below 20 = the earliest possible buy signal. This fired on PURE on April 8 — RSI only confirmed on April 27.</div>
+        <div class="chow">→ Add StochRSI(14,14,3,3) → K line must cross above D line while both are below 20. That crossover = early entry signal.</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="willr_exit" data-g="stier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Williams %R crossed above -80 (exiting oversold zone)</div>
+        <div class="chint">Williams %R below -80 = deeply oversold. When it crosses back above -80 and heads toward 0 = early buy signal. Fires 2–3 days before RSI confirms. Ideal entry: %R between -80 and -50, still rising.</div>
+        <div class="chow">→ Add Williams %R(14) → value must cross above -80 horizontal line from below. Rising %R between -80 to -50 = sweet spot entry zone.</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="vwap" data-g="stier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Price is trading above VWAP (today's session)</div>
+        <div class="chint">VWAP = zero lag real-time signal. Above VWAP = buyers in control right now. If price dips and reclaims VWAP with volume = strong intraday buy signal. Below VWAP = sellers winning today, wait.</div>
+        <div class="chow">→ Add VWAP(hlc3, Session) → current price must be ABOVE the VWAP line. Check on 1h or 15m chart for intraday confirmation.</div>
+      </div>
+      <span class="tag t-s">★ REAL-TIME</span>
+    </div>
+  </div>
+
+  <!-- SECTION 3: A-TIER + CONTEXT -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">03 — A-Tier Indicators + Market Context</span>
+      <div class="sec-right"><span class="tier-badge tier-a">A-TIER — CONFIRMATION</span><span class="sec-score" id="f3">0/7</span></div>
+    </div>
+    <div class="tier-legend">
+      <div class="tl-item"><div class="tl-dot" style="background:var(--a-blue)"></div>A-tier confirms what S-tier already signalled. Don't buy on A-tier alone.</div>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="ha_green" data-g="atier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Heikin Ashi candles are green with no lower wicks</div>
+        <div class="chint">HA candles with no lower shadow = strongest bullish signal. Buyers so strong price never dips intraday. 3+ consecutive green HA candles with no lower wick = confirmed uptrend, safe to hold or add.</div>
+        <div class="chow">→ Switch chart to Heikin Ashi mode → last 3+ candles must be solid green (no lower wick = ideal). Any doji or red HA = trend weakening.</div>
+      </div>
+      <span class="tag t-a">A-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="ema9" data-g="atier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Price is above EMA 9</div>
+        <div class="chint">Short-term trend direction. Price above EMA 9 = upward momentum. Price below = avoid. Works best when EMA 9 is also sloping upward, not flat.</div>
+        <div class="chow">→ Add EMA(9, close) → today's closing price must be above the EMA line. EMA line itself should be rising not flat.</div>
+      </div>
+      <span class="tag t-a">A-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="bb_mid" data-g="atier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Price is above middle Bollinger Band (BB midline = 20MA)</div>
+        <div class="chint">BB middle = the trend divider. Above = uptrend zone. Below = downtrend zone. Best buys happen when price bounces off the middle BB from below and closes above it with volume.</div>
+        <div class="chow">→ Add BB(20,2) → price must be above the middle orange line. That crossover with volume = buy signal.</div>
+      </div>
+      <span class="tag t-a">A-TIER</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="candle_bull" data-g="atier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Bullish candlestick at key support (Hammer / Engulfing / Doji reversal)</div>
+        <div class="chint">Zero lag pure price action signal. Hammer at support = buyers stepped in hard. Bullish Engulfing = green candle covers previous red = sellers defeated. Morning Star at bottom = 3-candle reversal pattern.</div>
+        <div class="chow">→ Regular candle chart → at S1/BB lower/EMA support → look for: long lower wick (hammer), green candle larger than prev red (engulfing), or 3-candle morning star pattern.</div>
+      </div>
+      <span class="tag t-price">PRICE ACTION</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="nepse" data-g="atier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">NEPSE index is green today (+0.5% or more)</div>
+        <div class="chint">Market-wide tide lifts all boats. Buying in a broadly red market adds unnecessary risk even for good stocks. Wait for a green market day for best entries.</div>
+        <div class="chow">→ NepseAlpha or ShareSansar homepage → NEPSE index must show green with +0.5% or more today.</div>
+      </div>
+      <span class="tag t-a">CONTEXT</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="buyq" data-g="atier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Buy queue total is larger than sell queue total</div>
+        <div class="chint">Order book shows real-time buying pressure. More buyers queued = price pressure upward. Like NGPL Apr 7: 1.14L buy vs 91K sell = bullish. Confirmed the trade.</div>
+        <div class="chow">→ Broker TMS or NepseAlpha Market Depth → Total Qty Buy must be larger than Total Qty Sell.</div>
+      </div>
+      <span class="tag t-a">ORDER BOOK</span>
+    </div>
+
+    <div class="ci bi" onclick="tog(this)" data-id="vol_above" data-g="atier">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Today's volume is above the 30-day average</div>
+        <div class="chint">High volume = conviction. Low volume green days reverse easily. Volume bar today must be taller than the average of recent bars. Volume confirmation is what separates real moves from fakeouts.</div>
+        <div class="chow">→ Daily chart volume bars → today's bar must be visually taller than the average of recent 20–30 bars. Or use Volume MA(30) indicator.</div>
+      </div>
+      <span class="tag t-a">VOLUME</span>
+    </div>
+  </div>
+
+  <div class="nwrap">
+    <div class="nlabel">Trade Notes</div>
+    <textarea class="ntxt" placeholder="e.g. Buy 10 PURE @ Rs.942 | SL: Rs.900 | T1: Rs.977 | T2: Rs.1010 | OBV rising + MFI crossed 50 + StochRSI from 20"></textarea>
+  </div>
+
+</div>
+
+<!-- ══════ SELL PANEL ══════ -->
+<div class="panel sell" id="sellPanel">
+
+  <div class="verdict v-neutral" id="sverd">
+    <div class="vtop">
+      <div class="vicon">◎</div>
+      <div><div class="vlabel">Sell Signal</div><div class="vtitle" id="svtitle">Start checking...</div></div>
+    </div>
+    <div class="pbar-wrap"><div class="pbar" id="spbar"></div></div>
+    <div class="stxt"><span id="sstxt">0 of 12 checked</span><span id="spct">0%</span></div>
+    <div class="sgrid">
+      <div class="smini"><div class="smlabel">IMMEDIATE</div><div class="smval" id="ssImm" style="color:var(--muted)">0/3</div></div>
+      <div class="smini"><div class="smlabel">S-TIER WARN</div><div class="smval" id="ssS" style="color:var(--muted)">0/4</div></div>
+      <div class="smini"><div class="smlabel">TAKE PROFIT</div><div class="smval" id="ssP" style="color:var(--muted)">0/5</div></div>
+    </div>
+    <div class="vdesc" id="svdesc">Check boxes to get your sell verdict.</div>
+  </div>
+
+  <div class="blocker" id="sblock"></div>
+
+  <!-- IMMEDIATE SELL -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">01 — Immediate Exit Triggers</span>
+      <div class="sec-right"><span class="tier-badge tier-fund">NON-NEGOTIABLE</span><span class="sec-score" id="s1s">0/3</span></div>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="sl_hit" data-urg="1">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Price closed below my stop loss level</div>
+        <div class="chint">This is a contract with yourself. Breaking it once means you'll break it every time. Stop loss hit = sell all, no debate, no hope, no waiting for recovery.</div>
+        <div class="chow">→ Compare today's closing price with your written stop loss. Below it = sell everything before next session opens.</div>
+      </div>
+      <span class="tag t-urgent">EXIT NOW</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="bad_news" data-urg="1">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Company announced bad news (loss, regulatory action, dividend cut)</div>
+        <div class="chint">The reason you bought the stock no longer exists. Every minute you hold hoping for recovery = every minute others are exiting. First out wins.</div>
+        <div class="chow">→ Check ShareSansar / NepseAlpha Announcements tab daily for your holdings. Any negative announcement = exit same session.</div>
+      </div>
+      <span class="tag t-urgent">EXIT NOW</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="eps_neg" data-urg="1">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">New quarterly EPS turned negative (company started losing money)</div>
+        <div class="chint">You bought a profitable company. Now it's losing money. The fundamental story changed completely. No technical recovery will save a loss-making company long term.</div>
+        <div class="chow">→ ShareHub → Fundamental → latest quarterly EPS must remain positive. If negative = exit regardless of current profit/loss on trade.</div>
+      </div>
+      <span class="tag t-urgent">EXIT NOW</span>
+    </div>
+  </div>
+
+  <!-- S-TIER EARLY SELL WARNINGS -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">02 — S-Tier Early Sell Warnings (Leading)</span>
+      <div class="sec-right"><span class="tier-badge tier-s">★ S-TIER — ACT EARLY</span><span class="sec-score" id="s2s">0/4</span></div>
+    </div>
+    <div class="tier-legend">
+      <div class="tl-item"><div class="tl-dot" style="background:var(--s-gold)"></div>These warn you 2–5 days BEFORE price drops — exit while price is still high</div>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="obv_bear_div">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">OBV Bearish Divergence — price making higher highs but OBV declining</div>
+        <div class="chint">THE EARLIEST AND MOST POWERFUL SELL SIGNAL. Price still going up but OBV falling = smart money distributing quietly at high prices. Retail is buying while institutions are selling. Price will follow OBV down. This is exactly what happened to SOHL and HFIN before their eventual reversals.</div>
+        <div class="chow">→ Compare OBV direction vs price. Price at new high but OBV lower than previous high = SELL at least 50% immediately. Don't wait for price to confirm.</div>
+      </div>
+      <span class="tag t-s">★ DIVERGENCE</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="mfi_fall">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">MFI crossed below 50 OR MFI above 80 (overbought)</div>
+        <div class="chint">MFI crossing below 50 = money flowing out, 2–3 days before price drops. MFI above 80 = extreme overbought = reduce by 50% now. Like PURE StochRSI at 99 on Apr 28 = short term exhaustion signal.</div>
+        <div class="chow">→ MFI(14) → if above 80: sell 50% now. If crossing from above to below 50: sell 50–70% immediately. These are early warnings before the drop is visible in price.</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="stoch_ob">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">StochRSI K crossed below D from above 80 (overbought exit)</div>
+        <div class="chint">StochRSI K crossing below D while both above 80 = momentum peaked and reversing. This fires 3–5 days before price starts to fall. Like PURE StochRSI K at 99 = extreme overbought = consolidation or dip incoming very soon.</div>
+        <div class="chow">→ StochRSI → when K line (blue) crosses below D line (orange) while both are above 80 = reduce position by 50%. Price drop coming in days.</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="willr_ob">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Williams %R above -20 and starting to turn down</div>
+        <div class="chint">%R near 0 = deeply overbought. When it peaks above -20 and starts falling = early sell signal, fires 2–3 days before RSI would show overbought. Don't wait for RSI — act when %R turns from -20 zone.</div>
+        <div class="chow">→ Williams %R(14) → when value is above -20 and line starts declining = early exit signal. Sell partial. Full exit when price confirms by closing below EMA 9.</div>
+      </div>
+      <span class="tag t-s">★ S-TIER</span>
+    </div>
+  </div>
+
+  <!-- TAKE PROFIT / FULL EXIT -->
+  <div class="sec">
+    <div class="sec-hd">
+      <span class="sec-title">03 — Take Profit & Full Exit</span>
+      <div class="sec-right"><span class="tier-badge tier-a">PROFIT MANAGEMENT</span><span class="sec-score" id="s3s">0/5</span></div>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="t1_hit">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Price hit Target 1 — sell 50%, move SL to breakeven</div>
+        <div class="chint">T1 hit = the trade worked. Reward yourself by taking 50% off. Move remaining stop to your entry price. Now you're playing with house money — zero risk on remaining shares.</div>
+        <div class="chow">→ Compare LTP vs your written T1. At or above = sell exactly 50% of shares. Immediately move stop loss on remaining to your original entry price.</div>
+      </div>
+      <span class="tag t-warn">PARTIAL 50%</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="bb_upper">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Price reached upper Bollinger Band (overbought on BB)</div>
+        <div class="chint">Upper BB = statistical resistance. Price touching upper BB = sell at least 50%. 80% of the time price returns to middle BB from upper BB. Sell into strength, not weakness.</div>
+        <div class="chow">→ BB(20,2) → when price touches or exceeds upper band = sell 50%. If price rides along upper band with volume = hold remaining until S-tier sell signals appear.</div>
+      </div>
+      <span class="tag t-warn">PARTIAL 50%</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="ha_red">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Heikin Ashi candle turned red or shows long upper wick</div>
+        <div class="chint">HA red candle after a run of green = trend change signal. Long upper wick on HA = rejection at highs. This is a clean exit signal — the trend that made you profit is ending. Exit 50–100% depending on how many S-tier sell signals are also active.</div>
+        <div class="chow">→ HA chart → first red candle after multiple greens = sell 50%. Second consecutive red HA candle = sell everything. Don't wait for third.</div>
+      </div>
+      <span class="tag t-price">HA SIGNAL</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="up30_weak">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">Up 30%+ from entry AND 2+ S-tier sell signals active</div>
+        <div class="chint">You have 30% profit AND the leading indicators are weakening. The move is done. Don't let greed turn 30% into 5%. Like NGPL at Rs.490 target — RSI weakening + OBV flat = time to go.</div>
+        <div class="chow">→ Check P/L calculator below. If return above 30% AND OBV diverging AND MFI falling = exit everything. Bank the win.</div>
+      </div>
+      <span class="tag t-urgent">FULL EXIT</span>
+    </div>
+    <div class="ci si" onclick="togs(this)" data-id="nepse_crash">
+      <div class="cb"><svg width="11" height="9" viewBox="0 0 11 9"><path d="M1 4L4 7.5L10 1" stroke="#08100f" stroke-width="2.2" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="cc">
+        <div class="clabel">NEPSE index down 5%+ in one week</div>
+        <div class="chint">Market-wide crash takes everything down together. Individual stock analysis becomes irrelevant. Cash is the only safe position during broad market corrections. Exit and re-enter after market stabilises.</div>
+        <div class="chow">→ Compare NEPSE index today vs 5 trading days ago. If down 5%+ = reduce all positions to 50% minimum immediately. Full exit if down 8%+.</div>
+      </div>
+      <span class="tag t-urgent">FULL EXIT</span>
+    </div>
+  </div>
+
+  <!-- P/L CALCULATOR -->
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-title">P/L Calculator</span></div>
+    <div class="plgrid">
+      <div><div class="pll">Shares held</div><input type="number" class="pli" id="sh" placeholder="e.g. 10" oninput="calcPL()"></div>
+      <div><div class="pll">Current price Rs.</div><input type="number" class="pli" id="cp2" placeholder="LTP" oninput="calcPL()"></div>
+      <div><div class="pll">Avg cost / share Rs.</div><input type="number" class="pli" id="ca2" placeholder="your avg" oninput="calcPL()"></div>
+      <div class="plr">
+        <div style="font-size:9px;color:var(--muted);font-family:'Space Mono',monospace;margin-bottom:3px;">NET P/L</div>
+        <div id="plv" style="font-size:20px;font-weight:800;color:var(--muted);font-family:'Space Mono',monospace;">Rs. 0</div>
+        <div id="plp" style="font-size:11px;color:var(--muted);font-family:'Space Mono',monospace;">0.00%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="nwrap">
+    <div class="nlabel">Exit Notes</div>
+    <textarea class="ntxt" placeholder="e.g. Selling PURE 5 shares @ Rs.977 (T1 upper BB) | OBV still rising so keeping 5 shares | New SL moved to Rs.942 (breakeven)"></textarea>
+  </div>
+</div>
+
+<!-- QUICK RULES -->
+<div class="rgrid">
+  <div class="rcard">
+    <div class="rct">S-Tier Buy Setup (ideal)</div>
+    <div class="ri"><span class="rd dgo"></span>OBV rising + price flat = divergence</div>
+    <div class="ri"><span class="rd dgo"></span>MFI crossed above 50</div>
+    <div class="ri"><span class="rd dgo"></span>StochRSI K cross above D from 20</div>
+    <div class="ri"><span class="rd dgo"></span>Williams %R crossed above -80</div>
+    <div class="ri"><span class="rd dgo"></span>Price above VWAP</div>
+    <div class="ri"><span class="rd dg"></span>HA green, no lower wicks</div>
+    <div class="ri"><span class="rd dg"></span>Above EMA 9 + BB middle</div>
+  </div>
+  <div class="rcard">
+    <div class="rct">S-Tier Sell Setup (exit early)</div>
+    <div class="ri"><span class="rd dr"></span>OBV falling, price still up</div>
+    <div class="ri"><span class="rd dr"></span>MFI above 80 or crossed below 50</div>
+    <div class="ri"><span class="rd dr"></span>StochRSI K below D from 80+</div>
+    <div class="ri"><span class="rd dr"></span>Williams %R turning from -20</div>
+    <div class="ri"><span class="rd da"></span>First red HA candle after run</div>
+    <div class="ri"><span class="rd da"></span>Price at upper BB</div>
+    <div class="ri"><span class="rd dr"></span>Stop loss hit = no debate</div>
+  </div>
+</div>
+
+</div><!-- /content -->
+
+<div class="footer">NEPSE Checker v3 ★ S-Tier Edition · Removed: MACD, Accum/Dist, Plain RSI · Daku's Tool · Not financial advice</div>
+
+<script>
+const BS={eps:0,pe:0,notipo:0,notup10:0,obv_up:0,obv_div:0,mfi_above:0,mfi_cross:0,stoch_cross:0,willr_exit:0,vwap:0,ha_green:0,ema9:0,bb_mid:0,candle_bull:0,nepse:0,buyq:0,vol_above:0};
+const SS={sl_hit:0,bad_news:0,eps_neg:0,obv_bear_div:0,mfi_fall:0,stoch_ob:0,willr_ob:0,t1_hit:0,bb_upper:0,ha_red:0,up30_weak:0,nepse_crash:0};
+
+function sw(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.querySelector('.tab.'+t).classList.add('active');
+  document.getElementById(t+'Panel').classList.add('active');
+}
+
+function tog(el){
+  el.classList.toggle('on');
+  BS[el.dataset.id]=el.classList.contains('on')?1:0;
+  updateBuy();
+}
+function togs(el){
+  el.classList.toggle('on');
+  SS[el.dataset.id]=el.classList.contains('on')?1:0;
+  updateSell();
+}
+
+function col(el,v,mx){
+  el.textContent=v+'/'+mx;
+  const r=v/mx;
+  el.style.color=r>=.8?'var(--green)':r>=.5?'var(--amber)':'var(--muted)';
+}
+
+function updateBuy(){
+  const fK=['eps','pe','notipo','notup10'];
+  const sK=['obv_up','obv_div','mfi_above','mfi_cross','stoch_cross','willr_exit','vwap'];
+  const aK=['ha_green','ema9','bb_mid','candle_bull','nepse','buyq','vol_above'];
+
+  const fC=fK.filter(k=>BS[k]).length;
+  const sC=sK.filter(k=>BS[k]).length;
+  const aC=aK.filter(k=>BS[k]).length;
+  // S-tier counts double for weighted score
+  const wscore=fC*2+sC*3+aC*1;
+  const wmax=fK.length*2+sK.length*3+aK.length*1; // 8+21+7=36
+  const raw=fC+sC+aC; const total=18;
+  const pct=Math.round(raw/total*100);
+
+  col(document.getElementById('bsFund'),fC,4);
+  col(document.getElementById('bsS'),sC,7);
+  col(document.getElementById('bsA'),aC,7);
+  col(document.getElementById('f1'),fC,4);
+  col(document.getElementById('f2'),sC,7);
+  col(document.getElementById('f3'),aC,7);
+  document.getElementById('bstxt').textContent=raw+' of '+total+' checked';
+  document.getElementById('bpct').textContent=pct+'%';
+  const bar=document.getElementById('bpbar'); bar.style.width=pct+'%';
+
+  const card=document.getElementById('bverd');
+  const title=document.getElementById('bvtitle');
+  const desc=document.getElementById('bvdesc');
+  const block=document.getElementById('bblock');
+  card.className='verdict';
+
+  // critical check
+  const cf=[];
+  if(!BS.eps) cf.push('EPS must be positive');
+  if(!BS.notipo) cf.push('Avoid fresh IPO listings');
+  if(!BS.notup10) cf.push('Do not buy stocks up 10%+ today');
+
+  if(raw>0&&cf.length){
+    block.innerHTML='⛔ CRITICAL VIOLATED: '+cf.join(' · ');
+    block.classList.add('on');
+  } else block.classList.remove('on');
+
+  if(raw===0){
+    card.classList.add('v-neutral'); title.textContent='Start checking...';
+    desc.textContent='Tick the boxes. Verdict updates live.'; bar.style.background='var(--muted)'; return;
+  }
+  if(cf.length&&raw>2){
+    card.classList.add('v-no'); title.textContent='DO NOT BUY';
+    desc.textContent='Critical conditions violated. Fix the blockers first.'; bar.style.background='var(--red)'; return;
+  }
+
+  // weighted verdict using S-tier priority
+  const wp=Math.round(wscore/wmax*100);
+  if(wp>=80&&fC>=3&&sC>=5&&aC>=4){
+    card.classList.add('v-sbuy'); title.textContent='STRONG BUY — HIGH CONVICTION';
+    desc.textContent='All S-tier leading indicators aligned. Fundamentals solid. Multiple early signals confirmed simultaneously. This is the setup you wait for. Enter with full position.';
+    bar.style.background='var(--green)';
+  } else if(wp>=65&&fC>=3&&sC>=4){
+    card.classList.add('v-sbuy'); title.textContent='GOOD BUY SIGNAL';
+    desc.textContent='Strong S-tier signals present. Like PURE on Apr 28 — OBV rising, MFI above 50, StochRSI recovering. Use normal position size with clear stop loss.';
+    bar.style.background='var(--green)';
+  } else if(wp>=48&&fC>=3&&sC>=2){
+    card.classList.add('v-cbuy'); title.textContent='CAUTIOUS BUY — REDUCE SIZE';
+    desc.textContent='Some signals aligned but not all S-tier confirmed. Reduce position to 50% of normal size. Tight stop loss required.';
+    bar.style.background='var(--amber)';
+  } else if(wp>=30){
+    card.classList.add('v-wait'); title.textContent='WAIT — NOT READY';
+    desc.textContent='S-tier signals not sufficiently confirmed. Missing key leading indicators. Check again tomorrow.';
+    bar.style.background='var(--amber)';
+  } else {
+    card.classList.add('v-no'); title.textContent='DO NOT BUY';
+    desc.textContent='Most signals missing. Capital protection is the priority right now.';
+    bar.style.background='var(--red)';
+  }
+}
+
+function updateSell(){
+  const iK=['sl_hit','bad_news','eps_neg'];
+  const sK=['obv_bear_div','mfi_fall','stoch_ob','willr_ob'];
+  const pK=['t1_hit','bb_upper','ha_red','up30_weak','nepse_crash'];
+
+  const iC=iK.filter(k=>SS[k]).length;
+  const sC=sK.filter(k=>SS[k]).length;
+  const pC=pK.filter(k=>SS[k]).length;
+  const total=12; const checked=iC+sC+pC;
+  const pct=Math.round(checked/total*100);
+
+  col(document.getElementById('ssImm'),iC,3);
+  col(document.getElementById('ssS'),sC,4);
+  col(document.getElementById('ssP'),pC,5);
+  col(document.getElementById('s1s'),iC,3);
+  col(document.getElementById('s2s'),sC,4);
+  col(document.getElementById('s3s'),pC,5);
+  document.getElementById('sstxt').textContent=checked+' of '+total+' checked';
+  document.getElementById('spct').textContent=pct+'%';
+  const bar=document.getElementById('spbar'); bar.style.width=pct+'%';
+
+  const card=document.getElementById('sverd');
+  const title=document.getElementById('svtitle');
+  const desc=document.getElementById('svdesc');
+  const block=document.getElementById('sblock');
+  card.className='verdict';
+
+  if(checked===0){
+    card.classList.add('v-neutral'); title.textContent='Start checking...';
+    desc.textContent='Check boxes to get your sell verdict.'; bar.style.background='var(--muted)'; block.classList.remove('on'); return;
+  }
+
+  if(iC>=1){
+    card.classList.add('v-sell'); title.textContent='EXIT IMMEDIATELY — ALL SHARES';
+    const r=[SS.sl_hit?'Stop loss hit.':'',SS.bad_news?'Bad news announced.':'',SS.eps_neg?'EPS turned negative.':''].filter(Boolean).join(' ');
+    desc.textContent='Non-negotiable exit triggered. '+r+' Sell everything before next session.';
+    bar.style.background='var(--red)';
+    block.innerHTML='🔴 URGENT: '+r+' No debate. Exit now.'; block.classList.add('on');
+  } else if(sC>=3||(sC>=2&&pC>=2)){
+    card.classList.add('v-sell'); title.textContent='SELL ALL — MULTIPLE WARNINGS';
+    desc.textContent='3+ S-tier leading sell signals active. Smart money is exiting. Price drop coming in days. Sell everything while price is still high.';
+    bar.style.background='var(--red)'; block.classList.remove('on');
+  } else if(sC>=2||pC>=2){
+    card.classList.add('v-psell'); title.textContent='SELL 50–70% NOW';
+    desc.textContent='Multiple S-tier early warnings. Like OBV diverging + MFI falling. These lead price by 2–3 days. Reduce position now before the drop is visible.';
+    bar.style.background='var(--amber)'; block.classList.remove('on');
+  } else if(sC>=1||pC>=1){
+    card.classList.add('v-psell'); title.textContent='SELL 50% — TAKE PARTIAL PROFIT';
+    desc.textContent='One early warning or profit target hit. Reduce by 50%, move stop to breakeven. Let remaining ride with tight stop.';
+    bar.style.background='var(--amber)'; block.classList.remove('on');
+  } else {
+    card.classList.add('v-hold'); title.textContent='HOLD — No sell signal';
+    desc.textContent='No exit conditions triggered. Trade still valid. Stay patient, let it run to your target.';
+    bar.style.background='var(--cyan)'; block.classList.remove('on');
+  }
+}
+
+function calcPL(){
+  const s=parseFloat(document.getElementById('sh').value)||0;
+  const c=parseFloat(document.getElementById('cp2').value)||0;
+  const a=parseFloat(document.getElementById('ca2').value)||0;
+  if(s&&c&&a){
+    const pl=(c-a)*s; const pct=((c-a)/a)*100;
+    const pv=document.getElementById('plv'); const pp=document.getElementById('plp');
+    pv.textContent=(pl>=0?'+':'−')+'Rs. '+Math.abs(Math.round(pl)).toLocaleString();
+    pv.style.color=pl>=0?'var(--green)':'var(--red)';
+    pp.textContent=(pct>=0?'+':'')+pct.toFixed(2)+'%';
+    pp.style.color=pl>=0?'var(--green)':'var(--red)';
+  }
+}
+
+function syncP(){
+  document.getElementById('cp2').value=document.getElementById('cprice').value;
+  calcPL();
+}
+function syncA(){
+  document.getElementById('ca2').value=document.getElementById('aprice').value;
+  calcPL();
+}
+
+function resetAll(){
+  document.querySelectorAll('.ci').forEach(el=>{
+    el.classList.remove('on');
+    const id=el.dataset.id;
+    if(id&&BS.hasOwnProperty(id)) BS[id]=0;
+    if(id&&SS.hasOwnProperty(id)) SS[id]=0;
+  });
+  ['sym','cprice','aprice','sh','cp2','ca2'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelectorAll('.ntxt').forEach(t=>t.value='');
+  document.getElementById('plv').textContent='Rs. 0'; document.getElementById('plv').style.color='var(--muted)';
+  document.getElementById('plp').textContent='0.00%'; document.getElementById('plp').style.color='var(--muted)';
+  updateBuy(); updateSell();
+}
+</script>
+</body>
+</html>
