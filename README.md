@@ -1,58 +1,68 @@
-# NEPSE Trade Checker v2 — Daku's Personal Tool
+# NEPSE Trade Checker — Daku's Personal Tool
 
-This is my personal trading decision tool for the Nepal Stock Exchange (NEPSE). I built it because I was getting overwhelmed with too many indicators and often making emotional decisions.
+My personal NEPSE trading decision tool was built from real trading experience (HFIN +897% win & PURE lessons).
 
-### Why I Made This Tool
-After trading for some time, I realized I needed a **systematic checklist** that forces me to follow my own rules every single time — especially after big wins like HFIN (+897%) and painful lessons like PURE.
+### Version History
 
-**v2** is a big upgrade from v1. It now clearly separates **Lagging** and **Leading** indicators so I can catch better entries and exits.
+**v3 — S-Tier Only** *(Latest & Recommended)*  
+**Biggest upgrade yet** — Focused purely on high-probability signals.
 
-### Key Features (v2)
+**Key Changes in v3:**
+- Removed redundant lagging indicators (MACD, Accum/Dist, Plain RSI)
+- Heavy focus on **S-Tier Leading Indicators** (OBV, MFI, StochRSI, Williams %R, VWAP, Divergence)
+- Weighted scoring system (S-Tier has higher priority)
+- Cleaner UI with better tier badges (S-Tier ★, A-Tier, Fundamentals)
+- Improved early sell warnings (especially bearish divergence)
+- "Removed Indicators — Why" section for transparency
 
-- **Full v5-inspired Checklist** (based on my trading journal)
-- **Leading Indicators** section (OBV, MFI, StochRSI, Williams %R, VWAP, Divergence)
-- **Lagging Indicators** for confirmation (EMA9, BB, RSI, MACD, Accum/Dist)
-- **Fundamentals Gate** (EPS, P/E, IPO filter, etc.)
-- **Market & Order Book** checks
-- **Strong Sell Signals** including bearish divergence
-- **Real-time Verdict System** with scoring
-- **Built-in P/L Calculator**
-- Clean dark mode & mobile friendly
+**v2 — Leading Indicators Edition**
+- Introduced full Leading vs Lagging indicator concept
+- Added OBV, MFI, StochRSI, Williams %R, VWAP
+- Better verdict system with section-wise scoring
+
+**v1 — Basic Foundation**
+- Fundamentals + Traditional lagging indicators (EMA, BB, RSI, MACD)
+- Simple buy/sell checklist
+
+### Core Philosophy Behind v3
+
+I removed everything that was redundant or lagging too much. Now the tool prioritizes **S-Tier signals** that lead price movement by 2–5 days — exactly as per my trading journal lessons.
 
 ### How to Use
 
-1. Open `nepse-checklist-v2.html`
-2. Click the **Raw** button on GitHub
-3. Save the page (Ctrl + S) or just use it directly
-4. Enter stock symbol, current price & your average cost
-5. Honestly tick the boxes
-6. Read the final verdict (Strong Buy / Cautious / Do Not Buy)
+1. Open **`nepse-checklist-v3.html`**
+2. Click **"Raw"** button → Save the page (Ctrl + S)
+3. Enter stock symbol and current price
+4. Tick boxes **honestly**
+5. Follow the final verdict
 
-**Pro Tip**: Always check **EPS first** — it's a critical filter.
+**Pro Tip**: Always check **Fundamentals first** (especially EPS). Then look for multiple S-Tier signals.
 
-### My Trading Rules Built Into This Tool
+### Strong Buy Setup (Ideal)
 
-- Never buy negative EPS companies
-- Minimum 1:2 Risk:Reward (though calculator coming in v3)
-- No chasing +10% stocks
-- Leading indicators get higher priority
-- Stop loss is non-negotiable
-- Partial profit booking at Target 1
+- Positive EPS + Reasonable P/E
+- OBV rising + Bullish Divergence
+- MFI crossed above 50
+- StochRSI exiting oversold
+- Price above VWAP
+- Heikin Ashi green candles
 
-### Versions
+### Strong Sell Setup
 
-- **v1** — Basic version (Fundamentals + Lagging only)
-- **v2** — Current version with Leading Indicators (Recommended)
-- 
-### Features in v2
-- Clear separation between Lagging vs Leading indicators
-- Better verdict system with 4 sections scoring
-- Improved P/L calculator
-- Stronger sell signals (including bearish divergence)
+- OBV Bearish Divergence
+- MFI falling below 50 or above 80
+- StochRSI crossing down from overbought
+- Stop loss hit (non-negotiable)
+
+### Future Plans
+
+- v4 → R:R Calculator + ATR Auto Stop Loss + Position Sizing (2% rule)
+- v5 → Auto confidence score + Trade journal integration
+- v6 → Portfolio tracker + Watchlist
 
 ---
 
-**Disclaimer**: This is a personal tool I built for my own learning and discipline. It is **not financial advice**. Always do your own research. Past performance (like HFIN) does not guarantee future results. Trade at your own risk.
+**Disclaimer**: This is my personal tool for learning and discipline. **Not financial advice**. Always do your own research. Trade at your own risk.
 
 Made with ❤️ by Daku  
-*From the NEPSE Trading Journal — May 2025 to May 2026*
+*Based on NEPSE Trading Journal — May 2025 to May 2026*
