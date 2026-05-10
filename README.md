@@ -1,68 +1,68 @@
-# NEPSE Trade Checker — Daku's Personal Tool
+# NEPSE Pro — Daku's Trading Tool
 
-My personal NEPSE trading decision tool was built from real trading experience (HFIN +897% win & PURE lessons).
+My personal **professional-grade** NEPSE trading decision system. Built from real experience — HFIN (+897% win) and hard lessons from PURE and others.
 
 ### Version History
 
-**v3 — S-Tier Only** *(Latest & Recommended)*  
-**Biggest upgrade yet** — Focused purely on high-probability signals.
+**v4 — Professional Edition** *(Latest & Most Advanced)*  
+**Biggest leap yet** — Turned into a complete professional system.
 
-**Key Changes in v3:**
+**New in v4:**
+- **Professional Gate Check** (5 critical rules that must all pass)
+- **Market Structure Analysis** (Daily HH/HL + Weekly alignment) — This alone would have blocked the bad PURE trade
+- **Risk:Reward Enforcer** (blocks any trade below 1:2)
+- **ATR-based Stop Loss Calculator**
+- **Position Sizing Calculator** (2% portfolio risk rule)
+- **Full Trade Plan section**
+- Much cleaner UI and scoring system
+
+**v3 — S-Tier Only**
+- Focused purely on high-quality **S-Tier Leading Indicators** (OBV, MFI, StochRSI, Williams %R, VWAP, Divergence)
 - Removed redundant lagging indicators (MACD, Accum/Dist, Plain RSI)
-- Heavy focus on **S-Tier Leading Indicators** (OBV, MFI, StochRSI, Williams %R, VWAP, Divergence)
-- Weighted scoring system (S-Tier has higher priority)
-- Cleaner UI with better tier badges (S-Tier ★, A-Tier, Fundamentals)
-- Improved early sell warnings (especially bearish divergence)
-- "Removed Indicators — Why" section for transparency
+- Weighted scoring with S-Tier priority
 
-**v2 — Leading Indicators Edition**
-- Introduced full Leading vs Lagging indicator concept
+**v2 — Leading Indicators**
+- Introduced **Leading vs Lagging** concept
 - Added OBV, MFI, StochRSI, Williams %R, VWAP
-- Better verdict system with section-wise scoring
 
-**v1 — Basic Foundation**
-- Fundamentals + Traditional lagging indicators (EMA, BB, RSI, MACD)
+**v1 — Foundation**
+- Basic fundamentals + traditional lagging indicators
 - Simple buy/sell checklist
 
-### Core Philosophy Behind v3
+### Core Philosophy
 
-I removed everything that was redundant or lagging too much. Now the tool prioritizes **S-Tier signals** that lead price movement by 2–5 days — exactly as per my trading journal lessons.
+This tool forces **professional discipline**:
+- Fundamentals first (especially EPS)
+- Market Structure must be bullish (no buying in downtrends)
+- Minimum 1:2 Risk:Reward
+- Only high-conviction S-Tier setups
+- Proper position sizing and stop loss
 
-### How to Use
+### How to Use (Recommended)
 
-1. Open **`nepse-checklist-v3.html`**
-2. Click **"Raw"** button → Save the page (Ctrl + S)
-3. Enter stock symbol and current price
-4. Tick boxes **honestly**
-5. Follow the final verdict
+1. Open **`nepse-pro-v4.html`** (latest version)
+2. Click **"Raw"** → Save the page
+3. Start with **Professional Gate Check** (must pass all)
+4. Then check Structure, S-Tier, and A-Tier
+5. Use **Calculators tab** before every trade (R:R, ATR Stop, Position Size)
 
-**Pro Tip**: Always check **Fundamentals first** (especially EPS). Then look for multiple S-Tier signals.
+### Strong Buy Conditions (v4)
 
-### Strong Buy Setup (Ideal)
-
-- Positive EPS + Reasonable P/E
-- OBV rising + Bullish Divergence
-- MFI crossed above 50
-- StochRSI exiting oversold
-- Price above VWAP
-- Heikin Ashi green candles
-
-### Strong Sell Setup
-
-- OBV Bearish Divergence
-- MFI falling below 50 or above 80
-- StochRSI crossing down from overbought
-- Stop loss hit (non-negotiable)
+- All 5 Gate Checks passed
+- Daily HH/HL + Weekly bullish
+- Multiple S-Tier signals (especially OBV divergence + MFI cross)
+- R:R ≥ 1:2
+- Proper position size (max 2% risk)
 
 ### Future Plans
 
-- v4 → R:R Calculator + ATR Auto Stop Loss + Position Sizing (2% rule)
-- v5 → Auto confidence score + Trade journal integration
-- v6 → Portfolio tracker + Watchlist
+- v5 → Auto trade journal + confidence scoring
+- v6 → Portfolio tracker + performance stats
+- v7 → Mobile app version
 
 ---
 
-**Disclaimer**: This is my personal tool for learning and discipline. **Not financial advice**. Always do your own research. Trade at your own risk.
+**Disclaimer**: This is my personal trading tool built for learning and discipline. **Not financial advice**. Always do your own research. Past performance does not guarantee future results.
 
 Made with ❤️ by Daku  
-*Based on NEPSE Trading Journal — May 2025 to May 2026*
+*NEPSE Trading Journal — May 2025 to May 2026*
